@@ -6,6 +6,7 @@
 <title>Riverbed to Maison Project</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Zen+Maru+Gothic:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -628,6 +629,311 @@
   /* ====== WAVE DIVIDER ====== */
   .wave { overflow: hidden; line-height: 0; margin-top: -1px; }
 
+  /* ====== RAIN RADAR ====== */
+  .radar-section {
+    padding: 6rem 5% 5rem;
+    background: linear-gradient(180deg, var(--sky-pale) 0%, var(--cream) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .radar-section::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(184,234,245,0.5), transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .radar-header { text-align: center; margin-bottom: 2.5rem; position: relative; }
+  .radar-intro {
+    margin-top: 1rem;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+  .radar-wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(125,211,232,0.25);
+    border-radius: 24px;
+    padding: 1.5rem;
+    box-shadow: 0 20px 60px -20px rgba(74,175,224,0.25);
+    position: relative;
+  }
+
+  .radar-controls {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+  .loc-btn, .city-select {
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--sky-light);
+    background: white;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .loc-btn:hover, .city-select:hover { border-color: var(--sky-deep); background: var(--sky-pale); }
+  .loc-btn { font-weight: 600; }
+  .city-select { padding-right: 2rem; }
+  .radar-status {
+    margin-left: auto;
+    font-size: 0.78rem;
+    color: var(--text-soft);
+    letter-spacing: 0.05em;
+  }
+  .radar-status .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--mint);
+    border-radius: 50%;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.25); }
+  }
+
+  /* キャラクター吹き出し */
+  .char-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0 0 1rem;
+    padding: 0.9rem 1.1rem;
+    background: linear-gradient(135deg, var(--sky-pale), white);
+    border: 1px solid rgba(125,211,232,0.4);
+    border-radius: 18px;
+    min-height: 64px;
+  }
+  .char-avatar {
+    flex-shrink: 0;
+    width: 52px; height: 52px;
+    background: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.9rem;
+    box-shadow: 0 4px 12px rgba(74,175,224,0.18);
+    animation: bobble 3s ease-in-out infinite;
+  }
+  @keyframes bobble {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-4px) rotate(2deg); }
+  }
+  .char-bubble {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .char-bubble strong { color: var(--sky-deep); font-weight: 700; }
+  .char-bubble.alert { color: #C44; }
+  .char-bubble.alert strong { color: #E55; }
+
+  /* MAP */
+  .rain-map {
+    height: 420px;
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(125,211,232,0.3);
+    background: #E8F0F5;
+  }
+  .leaflet-container { font-family: inherit; background: #E8F0F5; }
+  .rain-legend {
+    position: absolute;
+    bottom: 12px; left: 12px;
+    z-index: 500;
+    background: rgba(255,255,255,0.92);
+    padding: 0.5rem 0.7rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    color: var(--text-soft);
+    line-height: 1.4;
+    pointer-events: none;
+  }
+  .rain-legend .scale {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .rain-legend .swatch { width: 16px; height: 10px; border-radius: 2px; }
+
+  /* TIMELINE */
+  .timeline {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: 14px;
+    border: 1px solid rgba(125,211,232,0.25);
+  }
+  .play-btn {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--sky-deep);
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.2s, background 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .play-btn:hover { background: #3899CC; transform: scale(1.05); }
+  .play-btn.playing { background: var(--pink); }
+  .time-track { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .time-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--sky-light) 0%, var(--sky-light) 50%, var(--pink-light) 50%, var(--pink-light) 100%);
+    outline: none;
+  }
+  .time-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--sky-deep);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(74,175,224,0.4);
+  }
+  .time-slider::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--sky-deep);
+    cursor: pointer;
+  }
+  .time-labels {
+    display: flex; justify-content: space-between;
+    font-size: 0.7rem; color: var(--text-soft);
+  }
+  .time-now {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--sky-deep);
+    min-width: 84px;
+    text-align: right;
+  }
+  .time-now small { display: block; font-size: 0.65rem; color: var(--text-soft); font-weight: 400; }
+
+  /* EXTRAS (ASMR + Share) */
+  .radar-extras {
+    margin-top: 1rem;
+    display: flex; gap: 0.6rem; flex-wrap: wrap;
+  }
+  .extra-btn {
+    flex: 1;
+    min-width: 130px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--sky-light);
+    background: white;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  }
+  .extra-btn:hover { border-color: var(--sky-deep); background: var(--sky-pale); transform: translateY(-2px); }
+  .extra-btn.active {
+    background: var(--sky-deep);
+    color: white;
+    border-color: var(--sky-deep);
+  }
+
+  /* おすすめ */
+  .rec-section {
+    margin-top: 2.5rem;
+  }
+  .rec-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .rec-title .badge {
+    font-size: 0.7rem;
+    background: var(--pink);
+    color: white;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  .rec-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.85rem;
+  }
+  .rec-card {
+    background: white;
+    border-radius: 14px;
+    padding: 1rem;
+    border: 1px solid rgba(125,211,232,0.25);
+    transition: all 0.3s;
+    display: flex; flex-direction: column; gap: 0.4rem;
+    text-decoration: none; color: inherit;
+  }
+  .rec-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -10px rgba(74,175,224,0.3); border-color: var(--sky); }
+  .rec-card .rec-icon { font-size: 1.6rem; }
+  .rec-card .rec-name { font-weight: 700; font-size: 0.95rem; }
+  .rec-card .rec-msg { font-size: 0.78rem; color: var(--text-soft); line-height: 1.5; }
+
+  /* 雨粒アニメ */
+  .raindrops {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 24px;
+  }
+  .raindrops span {
+    position: absolute;
+    top: -20px;
+    width: 2px;
+    height: 14px;
+    background: linear-gradient(180deg, transparent, rgba(125,211,232,0.6));
+    border-radius: 50%;
+    animation: rain-fall linear infinite;
+  }
+  @keyframes rain-fall {
+    to { transform: translateY(110vh); }
+  }
+
+  @media (max-width: 768px) {
+    .radar-section { padding: 4rem 4% 3rem; }
+    .radar-wrap { padding: 1rem; }
+    .rain-map { height: 320px; }
+    .radar-status { width: 100%; margin: 0; }
+    .time-now { min-width: 64px; font-size: 0.85rem; }
+    .extra-btn { min-width: 0; }
+  }
+
   /* ====== RESPONSIVE ====== */
   @media (max-width: 768px) {
     nav { padding: 0 4%; }
@@ -652,6 +958,7 @@
   <ul class="nav-links">
     <li><a href="#about">プロジェクト</a></li>
     <li><a href="#services">活動</a></li>
+    <li><a href="#radar">雨雲レーダー</a></li>
     <li><a href="#sns">SNS</a></li>
     <li><a href="#contact">お問い合わせ</a></li>
   </ul>
@@ -774,6 +1081,96 @@
   </div>
 </section>
 
+<!-- RAIN RADAR -->
+<section class="radar-section" id="radar">
+  <div class="radar-header">
+    <p class="section-label">Weather Radar</p>
+    <h2 class="section-title">きょうの空模様</h2>
+    <p class="radar-intro">
+      雨雲の動きをチェックして、川辺へ・お店へ・おでかけへ。<br>
+      気象庁の高解像度ナウキャストで、過去1時間〜先6時間の雨雲を再生できます。
+    </p>
+  </div>
+
+  <div class="radar-wrap">
+    <div class="raindrops" id="raindrops" aria-hidden="true"></div>
+
+    <!-- Controls -->
+    <div class="radar-controls">
+      <button class="loc-btn" id="locBtn" type="button">📍 現在地</button>
+      <select class="city-select" id="citySelect" aria-label="都市選択">
+        <option value="35.6812,139.7671,東京">東京</option>
+        <option value="34.6937,135.5023,大阪">大阪</option>
+        <option value="35.1815,136.9066,名古屋">名古屋</option>
+        <option value="33.5904,130.4017,福岡">福岡</option>
+        <option value="43.0618,141.3545,札幌">札幌</option>
+        <option value="38.2682,140.8694,仙台">仙台</option>
+        <option value="34.3853,132.4553,広島">広島</option>
+        <option value="26.2124,127.6809,那覇">那覇</option>
+        <option value="35.4437,139.6380,横浜">横浜</option>
+        <option value="35.0116,135.7681,京都">京都</option>
+      </select>
+      <span class="radar-status" id="radarStatus"><span class="dot"></span>読み込み中…</span>
+    </div>
+
+    <!-- Character -->
+    <div class="char-row">
+      <div class="char-avatar" id="charAvatar">☁️</div>
+      <div class="char-bubble" id="charBubble">
+        雨雲の様子を見てみよう。少しお待ちください…
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div class="rain-map" id="rainMap" style="position:relative;">
+      <div class="rain-legend">
+        雨量(mm/h)
+        <div class="scale">
+          <span class="swatch" style="background:#c8e8ff"></span>
+          <span class="swatch" style="background:#7bb8ff"></span>
+          <span class="swatch" style="background:#3d7eff"></span>
+          <span class="swatch" style="background:#ffd34a"></span>
+          <span class="swatch" style="background:#ff7a3a"></span>
+          <span class="swatch" style="background:#d23f3f"></span>
+        </div>
+        <small>弱い ← → 激しい</small>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline">
+      <button class="play-btn" id="playBtn" type="button" aria-label="再生">▶</button>
+      <div class="time-track">
+        <input type="range" class="time-slider" id="timeSlider" min="0" max="0" value="0">
+        <div class="time-labels">
+          <span>-1時間</span>
+          <span>現在</span>
+          <span>+6時間</span>
+        </div>
+      </div>
+      <div class="time-now" id="timeNow">--:--<small id="timeKind">現在</small></div>
+    </div>
+
+    <!-- Extras -->
+    <div class="radar-extras">
+      <button class="extra-btn" id="asmrBtn" type="button">🎵 雨音ASMR</button>
+      <button class="extra-btn" id="shareBtn" type="button">📤 シェアカード</button>
+      <a class="extra-btn" id="mapLink" href="#" target="_blank" rel="noopener">🗾 詳細マップ</a>
+    </div>
+
+    <!-- Rainy day recommendations -->
+    <div class="rec-section">
+      <h3 class="rec-title">
+        <span id="recHeading">きょうのおすすめ</span>
+        <span class="badge" id="recBadge">RtoM</span>
+      </h3>
+      <div class="rec-cards" id="recCards">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- SNS -->
 <section class="sns-section" id="sns">
   <p class="section-label">Follow us</p>
@@ -849,6 +1246,525 @@
     </div>
   </div>
 </footer>
+
+<!-- Leaflet for map -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+(function(){
+  'use strict';
+
+  // ====== STATE ======
+  const state = {
+    lat: 35.6812,
+    lon: 139.7671,
+    cityName: '東京',
+    map: null,
+    radarLayer: null,
+    pastTimes: [],
+    futureTimes: [],
+    allTimes: [],
+    currentIdx: 0,
+    nowIdx: 0,
+    playing: false,
+    playTimer: null,
+    forecast: null,
+    asmrCtx: null,
+    asmrNodes: null,
+  };
+
+  // ====== UTIL ======
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, '0');
+
+  function fmtJST(yyyymmddhhmmss) {
+    // JMA times are UTC. Convert to JST (UTC+9).
+    const s = String(yyyymmddhhmmss);
+    const d = new Date(Date.UTC(
+      +s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8),
+      +s.slice(8,10), +s.slice(10,12), +s.slice(12,14)
+    ));
+    return d;
+  }
+  function fmtClock(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+  // ====== MAP ======
+  function initMap() {
+    state.map = L.map('rainMap', {
+      center: [state.lat, state.lon],
+      zoom: 9,
+      zoomControl: true,
+      attributionControl: true,
+    });
+    // Base: GSI 淡色地図 (Japan-friendly, no key)
+    L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
+      attribution: '地図: <a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>',
+      maxZoom: 18,
+    }).addTo(state.map);
+    // Marker
+    state.marker = L.circleMarker([state.lat, state.lon], {
+      radius: 8,
+      color: '#E55',
+      fillColor: '#F5A8C0',
+      fillOpacity: 0.9,
+      weight: 2,
+    }).addTo(state.map).bindPopup(state.cityName);
+  }
+
+  function setRadarTile(timeEntry) {
+    if (!timeEntry) return;
+    if (state.radarLayer) state.map.removeLayer(state.radarLayer);
+    const kind = timeEntry.kind; // 'past' or 'future'
+    const layer = kind === 'past' ? 'hrpns' : 'hrpns_nd';
+    const url = `https://www.jma.go.jp/bosai/jmatile/data/nowc/${timeEntry.basetime}/none/${timeEntry.validtime}/surf/${layer}/{z}/{x}/{y}.png`;
+    state.radarLayer = L.tileLayer(url, {
+      opacity: 0.7,
+      attribution: '雨雲: <a href="https://www.jma.go.jp/bosai/nowc/" target="_blank" rel="noopener">気象庁</a>',
+    }).addTo(state.map);
+  }
+
+  // ====== FETCH JMA TIMES ======
+  async function loadRadarTimes() {
+    try {
+      const [pastRes, futureRes] = await Promise.all([
+        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N1.json'),
+        fetch('https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_N2.json'),
+      ]);
+      const past = await pastRes.json();
+      const future = await futureRes.json();
+      state.pastTimes = past.map(t => ({
+        basetime: t.basetime,
+        validtime: t.validtime,
+        kind: 'past',
+        date: fmtJST(t.validtime),
+      }));
+      state.futureTimes = future.map(t => ({
+        basetime: t.basetime,
+        validtime: t.validtime,
+        kind: 'future',
+        date: fmtJST(t.validtime),
+      }));
+      state.allTimes = [...state.pastTimes, ...state.futureTimes];
+      state.nowIdx = state.pastTimes.length - 1; // last past = "現在"
+      if (state.nowIdx < 0) state.nowIdx = 0;
+      state.currentIdx = state.nowIdx;
+
+      const slider = $('timeSlider');
+      slider.max = state.allTimes.length - 1;
+      slider.value = state.nowIdx;
+      updateTimeDisplay();
+      setRadarTile(state.allTimes[state.currentIdx]);
+      $('radarStatus').innerHTML = '<span class="dot"></span>最新の観測データを表示中';
+      return true;
+    } catch (e) {
+      console.warn('JMA times fetch failed', e);
+      $('radarStatus').innerHTML = '<span class="dot" style="background:#E88"></span>雨雲データの取得に失敗';
+      return false;
+    }
+  }
+
+  function updateTimeDisplay() {
+    const t = state.allTimes[state.currentIdx];
+    if (!t) return;
+    $('timeNow').firstChild.textContent = fmtClock(t.date);
+    const kindLabel = state.currentIdx === state.nowIdx ? '現在' :
+                      state.currentIdx < state.nowIdx ? `${(state.nowIdx-state.currentIdx)*5}分前` :
+                      `+${Math.round((t.date - state.allTimes[state.nowIdx].date)/60000)}分`;
+    $('timeKind').textContent = kindLabel;
+  }
+
+  // ====== TIMELINE / PLAY ======
+  function bindTimeline() {
+    $('timeSlider').addEventListener('input', (e) => {
+      state.currentIdx = +e.target.value;
+      updateTimeDisplay();
+      setRadarTile(state.allTimes[state.currentIdx]);
+    });
+    $('playBtn').addEventListener('click', togglePlay);
+  }
+  function togglePlay() {
+    state.playing = !state.playing;
+    const btn = $('playBtn');
+    btn.classList.toggle('playing', state.playing);
+    btn.textContent = state.playing ? '⏸' : '▶';
+    if (state.playing) {
+      if (state.currentIdx >= state.allTimes.length - 1) state.currentIdx = 0;
+      state.playTimer = setInterval(() => {
+        state.currentIdx++;
+        if (state.currentIdx >= state.allTimes.length) {
+          state.currentIdx = 0;
+        }
+        $('timeSlider').value = state.currentIdx;
+        updateTimeDisplay();
+        setRadarTile(state.allTimes[state.currentIdx]);
+      }, 600);
+    } else if (state.playTimer) {
+      clearInterval(state.playTimer);
+    }
+  }
+
+  // ====== FORECAST (Open-Meteo) ======
+  async function loadForecast() {
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${state.lat}&longitude=${state.lon}&minutely_15=precipitation&hourly=precipitation_probability,weathercode,temperature_2m&forecast_days=2&timezone=Asia%2FTokyo`;
+      const res = await fetch(url);
+      const data = await res.json();
+      state.forecast = data;
+      updateAlertAndChar();
+      updateRecommendations();
+    } catch (e) {
+      console.warn('Forecast fetch failed', e);
+      $('charBubble').textContent = '予報データを取得できませんでした。少し時間をおいて再読み込みしてください。';
+    }
+  }
+
+  function nextRainMinutes() {
+    if (!state.forecast || !state.forecast.minutely_15) return null;
+    const m = state.forecast.minutely_15;
+    const now = new Date();
+    for (let i = 0; i < m.time.length; i++) {
+      const t = new Date(m.time[i]);
+      if (t < now) continue;
+      if (m.precipitation[i] >= 0.2) {
+        return { minutes: Math.round((t - now)/60000), mm: m.precipitation[i] };
+      }
+    }
+    return null;
+  }
+  function currentRain() {
+    if (!state.forecast || !state.forecast.minutely_15) return 0;
+    const m = state.forecast.minutely_15;
+    const now = new Date();
+    for (let i = m.time.length - 1; i >= 0; i--) {
+      if (new Date(m.time[i]) <= now) return m.precipitation[i] || 0;
+    }
+    return 0;
+  }
+  function rainTotalNextHours(hours) {
+    if (!state.forecast || !state.forecast.minutely_15) return 0;
+    const m = state.forecast.minutely_15;
+    const now = new Date();
+    const limit = new Date(now.getTime() + hours*3600*1000);
+    let sum = 0;
+    for (let i = 0; i < m.time.length; i++) {
+      const t = new Date(m.time[i]);
+      if (t < now) continue;
+      if (t > limit) break;
+      sum += (m.precipitation[i] || 0);
+    }
+    return sum;
+  }
+
+  function updateAlertAndChar() {
+    const cur = currentRain();
+    const next = nextRainMinutes();
+    const total6h = rainTotalNextHours(6);
+    const bubble = $('charBubble');
+    const avatar = $('charAvatar');
+    bubble.classList.remove('alert');
+
+    let emoji = '☀️';
+    let msg = '';
+
+    if (cur >= 0.2) {
+      emoji = cur >= 4 ? '🌧️' : '☔';
+      msg = `<strong>${state.cityName}は今、雨が降っています</strong>(${cur.toFixed(1)}mm/h)。傘をお忘れなく。`;
+      bubble.classList.add('alert');
+    } else if (next && next.minutes <= 60) {
+      emoji = '☔';
+      msg = `<strong>あと${next.minutes}分</strong>で雨が降り始めそう! 傘の準備を。`;
+      bubble.classList.add('alert');
+    } else if (next && next.minutes <= 180) {
+      emoji = '☁️';
+      msg = `${Math.round(next.minutes/60*10)/10}時間後に雨の予報。早めの行動が吉。`;
+    } else if (total6h < 0.1) {
+      emoji = '☀️';
+      msg = `<strong>${state.cityName}は当面の雨予報なし</strong>。川辺の散歩日和ですね。`;
+    } else {
+      emoji = '⛅';
+      msg = `今は穏やか。今後6時間で${total6h.toFixed(1)}mmの雨予報。`;
+    }
+
+    avatar.textContent = emoji;
+    bubble.innerHTML = msg;
+    updateRaindropsForCurrent(cur);
+  }
+
+  // ====== Rain drop visual (lightweight) ======
+  function updateRaindropsForCurrent(intensity) {
+    const wrap = $('raindrops');
+    wrap.innerHTML = '';
+    const count = intensity >= 4 ? 28 : intensity >= 1 ? 14 : intensity >= 0.2 ? 6 : 0;
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('span');
+      s.style.left = (Math.random()*100) + '%';
+      s.style.animationDuration = (0.6 + Math.random()*0.8) + 's';
+      s.style.animationDelay = (Math.random()*1.5) + 's';
+      s.style.opacity = (0.5 + Math.random()*0.4);
+      wrap.appendChild(s);
+    }
+  }
+
+  // ====== Recommendations tied to RtoM services ======
+  function updateRecommendations() {
+    const cards = $('recCards');
+    const heading = $('recHeading');
+    const badge = $('recBadge');
+    const cur = currentRain();
+    const next = nextRainMinutes();
+    const total6h = rainTotalNextHours(6);
+    const isRainy = cur >= 0.2 || (next && next.minutes <= 120);
+    const isHeavy = cur >= 4 || total6h >= 10;
+
+    let recs;
+    if (isHeavy) {
+      heading.textContent = '雨足が強いとき';
+      badge.textContent = 'STAY DRY';
+      recs = [
+        { icon: '🍲', name: '温まる一杯を', msg: 'RtoMの飲食店で、雨の日にうれしいあたたかメニューを。', href: '#services' },
+        { icon: '🎬', name: 'YouTubeで一息', msg: '雨の日こそ、自然と食の映像でゆったり時間を。', href: 'https://www.youtube.com/@rtomproject6944' },
+        { icon: '🏠', name: 'お家で過ごす', msg: '無理せず安全第一で。次の晴れ間まで川辺の音と一緒に。', href: '#radar' },
+      ];
+    } else if (isRainy) {
+      heading.textContent = '雨の日のおすすめ';
+      badge.textContent = 'RAINY DAY';
+      recs = [
+        { icon: '🍽️', name: '雨宿りごはん', msg: '雨足が落ち着くまで、温かい料理で待ち合わせ。', href: '#services' },
+        { icon: '🎉', name: '屋内イベント', msg: '雨の日でも安心の屋内プログラムをチェック。', href: '#services' },
+        { icon: '☂️', name: '傘アラート', msg: next ? `あと${next.minutes}分で降りそう。早めに動こう。` : '降ったり止んだりの予報です。', href: '#radar' },
+        { icon: '🎬', name: '映像でひと休み', msg: 'RtoM YouTubeで川辺の風景を楽しむ時間に。', href: 'https://www.youtube.com/@rtomproject6944' },
+      ];
+    } else {
+      heading.textContent = '晴れた日のおすすめ';
+      badge.textContent = 'SUNNY DAY';
+      recs = [
+        { icon: '🌊', name: '川辺さんぽ', msg: 'Riverbedの名のとおり、川辺をゆっくり歩く一日を。', href: '#about' },
+        { icon: '🎉', name: '外でイベント', msg: '気持ちのいい空模様。屋外プログラムが楽しめます。', href: '#services' },
+        { icon: '🍽️', name: 'テラスでランチ', msg: 'RtoM飲食店で、心地よい風を感じながら食事を。', href: '#services' },
+        { icon: '📸', name: '映像のヒント', msg: '晴れた風景はSNSや動画のシェアにぴったり。', href: '#sns' },
+      ];
+    }
+
+    cards.innerHTML = recs.map(r => `
+      <a class="rec-card" href="${r.href}" ${r.href.startsWith('http')?'target="_blank" rel="noopener"':''}>
+        <span class="rec-icon">${r.icon}</span>
+        <span class="rec-name">${r.name}</span>
+        <span class="rec-msg">${r.msg}</span>
+      </a>
+    `).join('');
+  }
+
+  // ====== ASMR rain sound (Web Audio synthesized) ======
+  function toggleAsmr() {
+    const btn = $('asmrBtn');
+    if (state.asmrCtx) {
+      stopAsmr();
+      btn.classList.remove('active');
+      btn.textContent = '🎵 雨音ASMR';
+      return;
+    }
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const bufferSize = 2 * ctx.sampleRate;
+    const buf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const w = Math.random()*2 - 1;
+      // brown-ish noise
+      ch[i] = (last + 0.02*w) / 1.02;
+      last = ch[i];
+      ch[i] *= 3.2;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 1200;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass'; hp.frequency.value = 200;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.0;
+    src.connect(hp); hp.connect(lp); lp.connect(gain); gain.connect(ctx.destination);
+    src.start();
+    // fade in
+    gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + 0.8);
+    state.asmrCtx = ctx;
+    state.asmrNodes = { src, gain };
+    btn.classList.add('active');
+    btn.textContent = '⏹ 雨音停止';
+  }
+  function stopAsmr() {
+    if (!state.asmrCtx) return;
+    try {
+      state.asmrNodes.gain.gain.linearRampToValueAtTime(0, state.asmrCtx.currentTime + 0.4);
+      setTimeout(() => { state.asmrCtx.close(); state.asmrCtx = null; state.asmrNodes = null; }, 450);
+    } catch(e) { state.asmrCtx = null; }
+  }
+
+  // ====== Share card (Canvas) ======
+  function generateShareCard() {
+    const W = 1080, H = 1350; // Instagram-ish portrait
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    // bg gradient
+    const g = c.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, '#E8F7FC'); g.addColorStop(0.5, '#FFFFFF'); g.addColorStop(1, '#FFD6E5');
+    c.fillStyle = g; c.fillRect(0,0,W,H);
+    // soft circles
+    c.fillStyle = 'rgba(184,234,245,0.6)';
+    c.beginPath(); c.arc(W-100, 120, 220, 0, Math.PI*2); c.fill();
+    c.fillStyle = 'rgba(245,168,192,0.35)';
+    c.beginPath(); c.arc(120, H-120, 260, 0, Math.PI*2); c.fill();
+
+    c.textAlign = 'center';
+    c.fillStyle = '#6B8080';
+    c.font = '600 36px "Zen Maru Gothic", sans-serif';
+    c.fillText('RtoM Weather Radar', W/2, 170);
+
+    c.fillStyle = '#2D3A3A';
+    c.font = '700 76px "Zen Maru Gothic", sans-serif';
+    c.fillText('きょうの空模様', W/2, 280);
+
+    // emoji
+    c.font = '300px serif';
+    c.fillText($('charAvatar').textContent, W/2, 600);
+
+    // location
+    c.fillStyle = '#4AAFE0';
+    c.font = '700 64px "Zen Maru Gothic", sans-serif';
+    c.fillText(state.cityName, W/2, 740);
+
+    // status text (strip HTML)
+    const text = ($('charBubble').textContent || '').trim();
+    c.fillStyle = '#2D3A3A';
+    c.font = '400 38px "Zen Maru Gothic", sans-serif';
+    wrapText(c, text, W/2, 830, W-160, 56);
+
+    // time
+    const now = new Date();
+    c.fillStyle = '#6B8080';
+    c.font = '500 32px "Nunito", sans-serif';
+    c.fillText(`${pad(now.getHours())}:${pad(now.getMinutes())}  ·  ${now.getMonth()+1}/${now.getDate()}`, W/2, H-200);
+
+    // footer
+    c.fillStyle = '#4A3728';
+    c.font = '600 36px "Zen Maru Gothic", sans-serif';
+    c.fillText('Riverbed to Maison Project', W/2, H-110);
+    c.fillStyle = '#6B8080';
+    c.font = '400 26px "Nunito", sans-serif';
+    c.fillText('川辺から、あなたの居場所へ。', W/2, H-60);
+
+    return cv;
+  }
+  function wrapText(c, text, x, y, maxW, lh) {
+    if (!text) return;
+    // Japanese: break per char width
+    let line = '';
+    const lines = [];
+    for (let i = 0; i < text.length; i++) {
+      const test = line + text[i];
+      if (c.measureText(test).width > maxW && line.length > 0) {
+        lines.push(line); line = text[i];
+      } else { line = test; }
+    }
+    if (line) lines.push(line);
+    lines.slice(0, 4).forEach((l, i) => c.fillText(l, x, y + i*lh));
+  }
+
+  async function shareCard() {
+    const cv = generateShareCard();
+    cv.toBlob(async (blob) => {
+      const file = new File([blob], 'rtom-weather.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'きょうの空模様', text: `${state.cityName}の雨雲レーダー by RtoM` });
+          return;
+        } catch(e){ /* fallback to download */ }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `rtom-weather-${state.cityName}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  }
+
+  // ====== Location handling ======
+  function applyLocation(lat, lon, name) {
+    state.lat = lat; state.lon = lon; state.cityName = name;
+    if (state.map) {
+      state.map.setView([lat, lon], state.map.getZoom());
+      if (state.marker) {
+        state.marker.setLatLng([lat, lon]).setPopupContent(name);
+      }
+    }
+    $('mapLink').href = `https://www.jma.go.jp/bosai/nowc/#zoom:10/lat:${lat}/lon:${lon}/colordepth:normal/elements:hrpns`;
+    loadForecast();
+  }
+
+  function bindControls() {
+    $('citySelect').addEventListener('change', (e) => {
+      const [lat, lon, name] = e.target.value.split(',');
+      applyLocation(+lat, +lon, name);
+    });
+    $('locBtn').addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('このブラウザでは現在地を取得できません。');
+        return;
+      }
+      const btn = $('locBtn');
+      btn.textContent = '📡 取得中…';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          applyLocation(pos.coords.latitude, pos.coords.longitude, '現在地');
+          btn.textContent = '📍 現在地';
+        },
+        () => {
+          alert('現在地の取得に失敗しました。');
+          btn.textContent = '📍 現在地';
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+      );
+    });
+    $('asmrBtn').addEventListener('click', toggleAsmr);
+    $('shareBtn').addEventListener('click', shareCard);
+  }
+
+  // ====== INIT (lazy: only when section near viewport) ======
+  let radarInited = false;
+  function initRadar() {
+    if (radarInited) return;
+    radarInited = true;
+    initMap();
+    bindTimeline();
+    bindControls();
+    $('mapLink').href = `https://www.jma.go.jp/bosai/nowc/#zoom:10/lat:${state.lat}/lon:${state.lon}/colordepth:normal/elements:hrpns`;
+    loadRadarTimes();
+    loadForecast();
+  }
+
+  function setup() {
+    const sec = $('radar') || document.querySelector('.radar-section');
+    if (!sec) return;
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) { initRadar(); io.disconnect(); break; }
+        }
+      }, { rootMargin: '200px' });
+      io.observe(sec);
+    } else {
+      initRadar();
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
+</script>
 
 </body>
 </html>
