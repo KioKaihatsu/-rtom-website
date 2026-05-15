@@ -1564,40 +1564,69 @@
       return;
     }
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const bufferSize = 2 * ctx.sampleRate;
+
+    // ピンクノイズ生成(Paul Kellet 法)。雨や葉ずれのような自然な質感。
+    const bufferSize = 4 * ctx.sampleRate;
     const buf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const ch = buf.getChannelData(0);
-    let last = 0;
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
     for (let i = 0; i < bufferSize; i++) {
       const w = Math.random()*2 - 1;
-      // brown-ish noise
-      ch[i] = (last + 0.02*w) / 1.02;
-      last = ch[i];
-      ch[i] *= 3.2;
+      b0 = 0.99886*b0 + w*0.0555179;
+      b1 = 0.99332*b1 + w*0.0750759;
+      b2 = 0.96900*b2 + w*0.1538520;
+      b3 = 0.86650*b3 + w*0.3104856;
+      b4 = 0.55000*b4 + w*0.5329522;
+      b5 = -0.7616*b5 - w*0.0168980;
+      ch[i] = (b0+b1+b2+b3+b4+b5+b6 + w*0.5362) * 0.11;
+      b6 = w * 0.115926;
     }
+
     const src = ctx.createBufferSource();
     src.buffer = buf; src.loop = true;
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass'; lp.frequency.value = 1200;
+
+    // 低域カット(ゴロゴロ感を排除)
     const hp = ctx.createBiquadFilter();
-    hp.type = 'highpass'; hp.frequency.value = 200;
+    hp.type = 'highpass'; hp.frequency.value = 480; hp.Q.value = 0.6;
+
+    // 高域も少し抑え、窓越しの雨のようなまろやかさ
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 2400; lp.Q.value = 0.6;
+
+    // ゆるい周波数の揺らぎ(風や雨脚の強弱)
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.13; // ≒8秒周期
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 350;
+    lfo.connect(lfoGain);
+    lfoGain.connect(lp.frequency);
+    lfo.start();
+
+    // 音量を抑え、ゆっくりフェードイン
     const gain = ctx.createGain();
     gain.gain.value = 0.0;
     src.connect(hp); hp.connect(lp); lp.connect(gain); gain.connect(ctx.destination);
     src.start();
-    // fade in
-    gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + 0.8);
+    gain.gain.linearRampToValueAtTime(0.07, ctx.currentTime + 1.6);
+
     state.asmrCtx = ctx;
-    state.asmrNodes = { src, gain };
+    state.asmrNodes = { src, gain, lfo };
     btn.classList.add('active');
     btn.textContent = '⏹ 雨音停止';
   }
   function stopAsmr() {
     if (!state.asmrCtx) return;
     try {
-      state.asmrNodes.gain.gain.linearRampToValueAtTime(0, state.asmrCtx.currentTime + 0.4);
-      setTimeout(() => { state.asmrCtx.close(); state.asmrCtx = null; state.asmrNodes = null; }, 450);
-    } catch(e) { state.asmrCtx = null; }
+      state.asmrNodes.gain.gain.linearRampToValueAtTime(0, state.asmrCtx.currentTime + 0.6);
+      const ctx = state.asmrCtx;
+      const nodes = state.asmrNodes;
+      setTimeout(() => {
+        try { nodes.lfo && nodes.lfo.stop(); } catch(e){}
+        try { nodes.src && nodes.src.stop(); } catch(e){}
+        try { ctx.close(); } catch(e){}
+      }, 650);
+      state.asmrCtx = null; state.asmrNodes = null;
+    } catch(e) { state.asmrCtx = null; state.asmrNodes = null; }
   }
 
   // ====== Share card (Canvas) ======
