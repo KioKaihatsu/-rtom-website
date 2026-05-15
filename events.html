@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>イベント — Riverbed to Maison Project</title>
+<meta name="description" content="RtoMが手掛ける、川辺を感じる体験イベント・屋内ワークショップ・コラボ企画のご案内。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Zen+Maru+Gothic:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shared.css">
+<style>
+  /* ====== EVENTS ====== */
+  .events-section {
+    background: var(--white);
+  }
+  .events-grid {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.4rem;
+  }
+  .event-card {
+    display: flex; flex-direction: column;
+    background: var(--cream);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(125,211,232,0.2);
+    transition: all 0.3s;
+    text-decoration: none; color: inherit;
+  }
+  .event-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 36px -12px rgba(74,175,224,0.3);
+    border-color: var(--sky);
+  }
+  .event-cover {
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, var(--sky-light), var(--pink-light));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem;
+    position: relative;
+  }
+  .event-cover.c2 { background: linear-gradient(135deg, #FFD6A5, var(--pink-light)); }
+  .event-cover.c3 { background: linear-gradient(135deg, var(--mint), var(--sky-light)); }
+  .event-cover.c4 { background: linear-gradient(135deg, #C9A6F0, var(--sky-pale)); }
+  .event-cover.c5 { background: linear-gradient(135deg, #FFE9A3, var(--sky-light)); }
+  .event-cover.c6 { background: linear-gradient(135deg, var(--pink-light), #B6E2D3); }
+  .event-status {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(255,255,255,0.92);
+    padding: 0.25rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--sky-deep);
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+  }
+  .event-status.past { color: var(--text-soft); }
+  .event-body { padding: 1.25rem 1.4rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; flex: 1; }
+  .event-date {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700; font-size: 0.85rem;
+    color: var(--pink);
+    letter-spacing: 0.05em;
+  }
+  .event-title { font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .event-place { font-size: 0.78rem; color: var(--text-soft); }
+  .event-desc { font-size: 0.82rem; line-height: 1.7; color: var(--text-soft); margin-top: 0.25rem; }
+  .event-tag-row { margin-top: auto; padding-top: 0.6rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .event-tag {
+    font-size: 0.68rem;
+    padding: 0.15rem 0.6rem;
+    background: var(--sky-pale);
+    color: var(--sky-deep);
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .events-cta {
+    text-align: center;
+    margin-top: 3.5rem;
+  }
+  .events-cta p { color: var(--text-soft); margin-bottom: 1rem; font-size: 0.9rem; }
+  .group-label {
+    max-width: 1080px;
+    margin: 0 auto 1.2rem;
+    display: flex; align-items: baseline; gap: 0.7rem;
+  }
+  .group-label h2 {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--text);
+  }
+  .group-label span { color: var(--text-soft); font-size: 0.78rem; }
+  .past-block { background: var(--sky-pale); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="logo-mark">RtoM</span>
+    <span class="logo-tag">Riverbed to Maison</span>
+  </a>
+  <button class="nav-toggle" type="button" aria-label="メニューを開く"><span></span></button>
+  <ul class="nav-links">
+    <li><a href="index.html#about">プロジェクト</a></li>
+    <li><a href="events.html" class="is-active">イベント</a></li>
+    <li><a href="shop.html">お店</a></li>
+    <li><a href="members.html">メンバー</a></li>
+    <li><a href="index.html#radar">雨雲レーダー</a></li>
+    <li><a href="index.html#sns">SNS</a></li>
+    <li><a href="index.html#contact">お問い合わせ</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="page-hero">
+  <div class="inner">
+    <p class="section-label">Events</p>
+    <h1>集まる、つながる、<br><span class="accent">RtoMのイベント</span></h1>
+    <p>季節の食を楽しむディナーから、川辺で行うワークショップ、雨の日でも安心の屋内イベントまで。みなさまと過ごす一日を、丁寧に企画しています。</p>
+  </div>
+</header>
+
+<!-- UPCOMING -->
+<section class="events-section">
+  <div class="group-label">
+    <h2>開催予定</h2>
+    <span>Upcoming Events</span>
+  </div>
+  <div class="events-grid">
+
+    <a href="#" class="event-card">
+      <div class="event-cover c1">🌸
+        <span class="event-status">受付中</span>
+      </div>
+      <div class="event-body">
+        <div class="event-date">2026.06.14 SAT  /  14:00–17:00</div>
+        <div class="event-title">川辺ピクニックマルシェ vol.3</div>
+        <div class="event-place">📍 多摩川河川敷 / 雨天時は屋内へ</div>
+        <p class="event-desc">地元の作り手と一緒に開く小さなマルシェ。コーヒー、焼き菓子、季節のサラダ、ハンドメイド雑貨が並びます。</p>
+        <div class="event-tag-row">
+          <span class="event-tag">屋外</span>
+          <span class="event-tag">家族OK</span>
+          <span class="event-tag">入場無料</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="#" class="event-card">
+      <div class="event-cover c2">🍳
+        <span class="event-status">残席わずか</span>
+      </div>
+      <div class="event-body">
+        <div class="event-date">2026.06.22 SUN  /  11:00–13:30</div>
+        <div class="event-title">日曜の朝ごはん教室</div>
+        <div class="event-place">📍 RtoM Kitchen(代々木)</div>
+        <p class="event-desc">パンとスープと卵だけのシンプルな朝食を、丁寧に作るワークショップ。料理初心者の方も歓迎です。</p>
+        <div class="event-tag-row">
+          <span class="event-tag">屋内</span>
+          <span class="event-tag">料理</span>
+          <span class="event-tag">少人数制</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="#" class="event-card">
+      <div class="event-cover c3">🎬
+        <span class="event-status">受付開始</span>
+      </div>
+      <div class="event-body">
+        <div class="event-date">2026.07.05 SAT  /  19:00–21:00</div>
+        <div class="event-title">夜の川辺シネマ</div>
+        <div class="event-place">📍 二子玉川リバーサイド</div>
+        <p class="event-desc">夏の夕暮れ、川辺で短編映画を一緒に。RtoMのYouTube作品の特別編も上映予定です。</p>
+        <div class="event-tag-row">
+          <span class="event-tag">屋外</span>
+          <span class="event-tag">夜</span>
+          <span class="event-tag">映画</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+</section>
+
+<!-- PAST -->
+<section class="events-section past-block">
+  <div class="group-label">
+    <h2>過去のイベント</h2>
+    <span>Past Events</span>
+  </div>
+  <div class="events-grid">
+
+    <a href="#" class="event-card">
+      <div class="event-cover c4">🎶
+        <span class="event-status past">終了</span>
+      </div>
+      <div class="event-body">
+        <div class="event-date">2026.04.20 SUN</div>
+        <div class="event-title">春の音楽夜会</div>
+        <div class="event-place">📍 RtoM Hall</div>
+        <p class="event-desc">RtoM所属タレントによる、アコースティック中心の小さなライブ。当日40名にご来場いただきました。</p>
+        <div class="event-tag-row">
+          <span class="event-tag">音楽</span>
+          <span class="event-tag">屋内</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="#" class="event-card">
+      <div class="event-cover c5">☕
+        <span class="event-status past">終了</span>
+      </div>
+      <div class="event-body">
+        <div class="event-date">2026.03.09 SUN</div>
+        <div class="event-title">河原で淹れるコーヒーの会</div>
+        <div class="event-place">📍 多摩川河川敷</div>
+        <p class="event-desc">焙煎士をゲストに招き、河原でコーヒーを淹れて飲む朝。寒さの中の一杯が好評でした。</p>
+        <div class="event-tag-row">
+          <span class="event-tag">屋外</span>
+          <span class="event-tag">コーヒー</span>
+        </div>
+      </div>
+    </a>
+
+    <a href="#" class="event-card">
+      <div class="event-cover c6">📸
+        <span class="event-status past">終了</span>
+      </div>
+      <div class="event-body">
+        <div class="event-date">2026.02.15 SAT</div>
+        <div class="event-title">写真とことばのワークショップ</div>
+        <div class="event-place">📍 RtoM Studio</div>
+        <p class="event-desc">日常を切り取るスマホ写真と短い言葉を、参加者と一緒に組み合わせる時間でした。</p>
+        <div class="event-tag-row">
+          <span class="event-tag">屋内</span>
+          <span class="event-tag">写真</span>
+        </div>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="events-cta">
+    <p>イベントの最新情報はSNSで発信しています。</p>
+    <a href="index.html#sns" class="btn-primary">SNSをフォローする →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-logo-area">
+      <a href="index.html" class="footer-logo">RtoM</a>
+      <div class="footer-tagline">
+        河川敷からタワマンを目指して<br>
+        みんなで育てるプロジェクト
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>MENU</h4>
+        <ul>
+          <li><a href="index.html#about">プロジェクトについて</a></li>
+          <li><a href="events.html">イベント</a></li>
+          <li><a href="shop.html">お店</a></li>
+          <li><a href="members.html">メンバー</a></li>
+          <li><a href="index.html#radar">雨雲レーダー</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>FOLLOW</h4>
+        <ul>
+          <li><a href="https://x.com/RtoM_Official" target="_blank" rel="noopener">X (Twitter)</a></li>
+          <li><a href="https://www.youtube.com/@rtomproject6944" target="_blank" rel="noopener">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2024 Riverbed to Maison Project. All rights reserved.</span>
+    <div class="footer-sns">
+      <a href="https://x.com/RtoM_Official" target="_blank" rel="noopener" aria-label="X">
+        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/@rtomproject6944" target="_blank" rel="noopener" aria-label="YouTube">
+        <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.546 15.568V8.432L15.818 12l-6.272 3.568z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile nav toggle
+  document.querySelector('.nav-toggle')?.addEventListener('click', () => {
+    document.querySelector('.nav-links')?.classList.toggle('is-open');
+  });
+</script>
+
+</body>
+</html>
