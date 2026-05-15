@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>メンバー — Riverbed to Maison Project</title>
+<meta name="description" content="RtoMを支える代表・シェフ・プロデューサー・タレントのご紹介。多彩な個性が集う場所です。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=Zen+Maru+Gothic:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/shared.css">
+<style>
+  .members-section { background: var(--white); padding-bottom: 5rem; }
+  .members-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.6rem;
+  }
+  .member-card {
+    background: var(--cream);
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(125,211,232,0.2);
+    transition: all 0.3s;
+    display: flex; flex-direction: column;
+  }
+  .member-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 36px -14px rgba(74,175,224,0.3);
+    border-color: var(--sky);
+  }
+  .member-avatar {
+    aspect-ratio: 1 / 1;
+    background: linear-gradient(135deg, var(--sky-light), var(--pink-light));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .member-card.c2 .member-avatar { background: linear-gradient(135deg, #FFE9A3, var(--pink-light)); }
+  .member-card.c3 .member-avatar { background: linear-gradient(135deg, var(--mint), var(--sky-pale)); }
+  .member-card.c4 .member-avatar { background: linear-gradient(135deg, #C9A6F0, var(--sky-light)); }
+  .member-card.c5 .member-avatar { background: linear-gradient(135deg, var(--pink-light), #B6E2D3); }
+  .member-card.c6 .member-avatar { background: linear-gradient(135deg, #FFD6A5, var(--sky-pale)); }
+
+  .member-role {
+    position: absolute; bottom: 14px; left: 14px;
+    background: rgba(255,255,255,0.92);
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--sky-deep);
+    letter-spacing: 0.05em;
+  }
+
+  .member-body {
+    padding: 1.3rem 1.4rem 1.5rem;
+    display: flex; flex-direction: column; gap: 0.4rem;
+    flex: 1;
+  }
+  .member-name {
+    font-size: 1.2rem; font-weight: 700;
+    color: var(--text);
+  }
+  .member-name-en {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.78rem; font-weight: 500;
+    color: var(--text-soft);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: -0.2rem;
+  }
+  .member-bio {
+    font-size: 0.83rem;
+    line-height: 1.75;
+    color: var(--text-soft);
+    margin-top: 0.4rem;
+  }
+  .member-tags {
+    display: flex; flex-wrap: wrap; gap: 0.35rem;
+    margin-top: 0.6rem;
+  }
+  .member-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.65rem;
+    background: var(--sky-pale);
+    color: var(--sky-deep);
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .member-social {
+    margin-top: auto;
+    padding-top: 0.9rem;
+    display: flex; gap: 0.5rem;
+  }
+  .member-social a {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid rgba(125,211,232,0.4);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: var(--text-soft);
+  }
+  .member-social a:hover {
+    background: var(--sky-deep);
+    border-color: var(--sky-deep);
+    color: white;
+    transform: translateY(-2px);
+  }
+  .member-social svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* CTA */
+  .join-cta {
+    max-width: 1080px;
+    margin: 4rem auto 0;
+    text-align: center;
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, var(--sky-pale), #FFF0F5);
+    border-radius: 24px;
+  }
+  .join-cta h3 {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.5rem; font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.7rem;
+  }
+  .join-cta p {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    margin-bottom: 1.2rem;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-logo">
+    <span class="logo-mark">RtoM</span>
+    <span class="logo-tag">Riverbed to Maison</span>
+  </a>
+  <button class="nav-toggle" type="button" aria-label="メニューを開く"><span></span></button>
+  <ul class="nav-links">
+    <li><a href="index.html#about">プロジェクト</a></li>
+    <li><a href="events.html">イベント</a></li>
+    <li><a href="shop.html">お店</a></li>
+    <li><a href="members.html" class="is-active">メンバー</a></li>
+    <li><a href="index.html#radar">雨雲レーダー</a></li>
+    <li><a href="index.html#sns">SNS</a></li>
+    <li><a href="index.html#contact">お問い合わせ</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="page-hero">
+  <div class="inner">
+    <p class="section-label">Members</p>
+    <h1>RtoMを支える<br><span class="accent">仲間たち</span></h1>
+    <p>料理人、プロデューサー、タレント、映像作家——個性豊かなメンバーが集い、川辺からのプロジェクトを育てています。</p>
+  </div>
+</header>
+
+<!-- MEMBERS -->
+<section class="members-section">
+  <div class="members-grid">
+
+    <article class="member-card">
+      <div class="member-avatar">🌊
+        <span class="member-role">代表 / FOUNDER</span>
+      </div>
+      <div class="member-body">
+        <div class="member-name">山田 一郎</div>
+        <div class="member-name-en">Ichiro Yamada</div>
+        <p class="member-bio">川辺で育った経験から「自然と人がやさしくつながる場」を作りたいとRtoMを立ち上げ。プロジェクト全体の指揮を担当。</p>
+        <div class="member-tags">
+          <span class="member-tag">代表</span>
+          <span class="member-tag">企画</span>
+        </div>
+        <div class="member-social">
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25z"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="member-card c2">
+      <div class="member-avatar">🍳
+        <span class="member-role">SHEF</span>
+      </div>
+      <div class="member-body">
+        <div class="member-name">佐藤 美咲</div>
+        <div class="member-name-en">Misaki Sato</div>
+        <p class="member-bio">フランスで研鑽を積んだのち、地元の食材と向き合う料理を志しRtoMへ。川辺キッチンの料理長として、季節のコースを設計。</p>
+        <div class="member-tags">
+          <span class="member-tag">料理</span>
+          <span class="member-tag">薪火</span>
+        </div>
+        <div class="member-social">
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25z"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="member-card c3">
+      <div class="member-avatar">🎬
+        <span class="member-role">PRODUCER</span>
+      </div>
+      <div class="member-body">
+        <div class="member-name">中村 蓮</div>
+        <div class="member-name-en">Ren Nakamura</div>
+        <p class="member-bio">広告制作会社を経て独立。RtoM YouTubeチャンネルの企画・撮影・編集を担当し、川辺の風景と日常を映像に。</p>
+        <div class="member-tags">
+          <span class="member-tag">映像</span>
+          <span class="member-tag">編集</span>
+        </div>
+        <div class="member-social">
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.546 15.568V8.432L15.818 12l-6.272 3.568z"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="member-card c4">
+      <div class="member-avatar">🎤
+        <span class="member-role">TALENT</span>
+      </div>
+      <div class="member-body">
+        <div class="member-name">小林 ひかり</div>
+        <div class="member-name-en">Hikari Kobayashi</div>
+        <p class="member-bio">シンガーソングライター。RtoMイベントでのアコースティックライブや、YouTube番組のテーマ曲制作を担当。</p>
+        <div class="member-tags">
+          <span class="member-tag">音楽</span>
+          <span class="member-tag">ライブ</span>
+        </div>
+        <div class="member-social">
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25z"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="member-card c5">
+      <div class="member-avatar">☕
+        <span class="member-role">BARISTA</span>
+      </div>
+      <div class="member-body">
+        <div class="member-name">高橋 さくら</div>
+        <div class="member-name-en">Sakura Takahashi</div>
+        <p class="member-bio">国内焙煎士コンテスト入賞経験あり。メゾン珈琲店の焙煎・抽出を担当し、お店の一杯ごとに表情をつけている。</p>
+        <div class="member-tags">
+          <span class="member-tag">コーヒー</span>
+          <span class="member-tag">焙煎</span>
+        </div>
+        <div class="member-social">
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25z"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+    <article class="member-card c6">
+      <div class="member-avatar">📷
+        <span class="member-role">DESIGNER</span>
+      </div>
+      <div class="member-body">
+        <div class="member-name">伊藤 葵</div>
+        <div class="member-name-en">Aoi Ito</div>
+        <p class="member-bio">グラフィックデザイナー兼フォトグラファー。RtoMのロゴ・印刷物・SNSのビジュアル設計を担当。</p>
+        <div class="member-tags">
+          <span class="member-tag">デザイン</span>
+          <span class="member-tag">写真</span>
+        </div>
+        <div class="member-social">
+          <a href="#" aria-label="X"><svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25z"/></svg></a>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="join-cta">
+    <h3>仲間を募集しています</h3>
+    <p>RtoMでは、料理・音楽・映像・デザイン・イベント運営まで、<br>多様な才能と一緒にプロジェクトを育てています。</p>
+    <a href="index.html#contact" class="btn-primary">お問い合わせ →</a>
+  </div>
+
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-logo-area">
+      <a href="index.html" class="footer-logo">RtoM</a>
+      <div class="footer-tagline">
+        河川敷からタワマンを目指して<br>
+        みんなで育てるプロジェクト
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <div class="footer-col">
+        <h4>MENU</h4>
+        <ul>
+          <li><a href="index.html#about">プロジェクトについて</a></li>
+          <li><a href="events.html">イベント</a></li>
+          <li><a href="shop.html">お店</a></li>
+          <li><a href="members.html">メンバー</a></li>
+          <li><a href="index.html#radar">雨雲レーダー</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>FOLLOW</h4>
+        <ul>
+          <li><a href="https://x.com/RtoM_Official" target="_blank" rel="noopener">X (Twitter)</a></li>
+          <li><a href="https://www.youtube.com/@rtomproject6944" target="_blank" rel="noopener">YouTube</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2024 Riverbed to Maison Project. All rights reserved.</span>
+    <div class="footer-sns">
+      <a href="https://x.com/RtoM_Official" target="_blank" rel="noopener" aria-label="X">
+        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <a href="https://www.youtube.com/@rtomproject6944" target="_blank" rel="noopener" aria-label="YouTube">
+        <svg viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.546 15.568V8.432L15.818 12l-6.272 3.568z"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.querySelector('.nav-toggle')?.addEventListener('click', () => {
+    document.querySelector('.nav-links')?.classList.toggle('is-open');
+  });
+</script>
+
+</body>
+</html>

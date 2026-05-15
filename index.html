@@ -378,7 +378,29 @@
     padding: 2.5rem 2rem;
     border: 1px solid rgba(125,211,232,0.15);
     transition: transform 0.3s, box-shadow 0.3s;
-    cursor: default;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    position: relative;
+  }
+  .service-card::after {
+    content: '→';
+    position: absolute;
+    right: 1.6rem;
+    bottom: 1.6rem;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--sky-pale);
+    color: var(--sky-deep);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    transition: all 0.25s;
+  }
+  .service-card:hover::after {
+    background: var(--sky-deep);
+    color: white;
+    transform: translateX(4px);
   }
 
   .service-card:hover {
@@ -957,7 +979,9 @@
   </a>
   <ul class="nav-links">
     <li><a href="#about">プロジェクト</a></li>
-    <li><a href="#services">活動</a></li>
+    <li><a href="events.html">イベント</a></li>
+    <li><a href="shop.html">お店</a></li>
+    <li><a href="members.html">メンバー</a></li>
     <li><a href="#radar">雨雲レーダー</a></li>
     <li><a href="#sns">SNS</a></li>
     <li><a href="#contact">お問い合わせ</a></li>
@@ -1051,33 +1075,33 @@
   </div>
 
   <div class="services-grid">
-    <div class="service-card">
+    <a class="service-card" href="shop.html">
       <div class="service-icon-wrap">🍽️</div>
       <div class="service-name">飲食店経営</div>
       <p class="service-desc">自然の恵みを活かした食体験。温かな空間で、ここにしかない味をお届けします。地域と人をつなぐ食の場づくり。</p>
       <span class="service-tag">RESTAURANT</span>
-    </div>
+    </a>
 
-    <div class="service-card">
+    <a class="service-card" href="members.html">
       <div class="service-icon-wrap">⭐</div>
       <div class="service-name">タレントマネージメント</div>
       <p class="service-desc">個性輝く才能と社会をつなぐ。一人ひとりのストーリーを大切に育て、活躍の場を広げていきます。</p>
       <span class="service-tag">TALENT</span>
-    </div>
+    </a>
 
-    <div class="service-card">
+    <a class="service-card" href="events.html">
       <div class="service-icon-wrap">🎉</div>
       <div class="service-name">イベント運営</div>
       <p class="service-desc">人が集まり、記憶に残る瞬間を演出。大小さまざまなイベントをプロデュース・運営します。</p>
       <span class="service-tag">EVENTS</span>
-    </div>
+    </a>
 
-    <div class="service-card">
+    <a class="service-card" href="https://www.youtube.com/@rtomproject6944" target="_blank" rel="noopener">
       <div class="service-icon-wrap">🎬</div>
       <div class="service-name">YouTubeチャンネル</div>
       <p class="service-desc">日常の美しさを映像で届ける。自然・食・人の温もりを丁寧に切り取り、動画で発信しています。</p>
       <span class="service-tag">YOUTUBE</span>
-    </div>
+    </a>
   </div>
 </section>
 
@@ -1220,7 +1244,10 @@
         <h4>MENU</h4>
         <ul>
           <li><a href="#about">プロジェクトについて</a></li>
-          <li><a href="#services">活動内容</a></li>
+          <li><a href="events.html">イベント</a></li>
+          <li><a href="shop.html">お店</a></li>
+          <li><a href="members.html">メンバー</a></li>
+          <li><a href="#radar">雨雲レーダー</a></li>
           <li><a href="#sns">SNS</a></li>
         </ul>
       </div>
