@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 110" role="img" aria-label="Riverbed in Otherworld">
+  <defs>
+    <style>
+      .rio-text {
+        font-family: 'Josefin Sans', 'Nunito', 'Arial', sans-serif;
+        font-weight: 300;
+        font-size: 64px;
+        letter-spacing: 14px;
+        fill: #2D3A3A;
+      }
+    </style>
+  </defs>
+
+  <!-- RIVERBED -->
+  <text class="rio-text" x="0" y="78">RIVERBED</text>
+
+  <!-- Fork & Knife glyph replacing the "I" in "IN" -->
+  <g transform="translate(560, 20)" fill="none" stroke="#2D3A3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Knife: tapered blade + slim handle -->
+    <path d="M 4 4 Q 0 4 0 14 Q 0 24 4 30 L 4 72" />
+    <!-- Fork: three tines, crossbar, handle -->
+    <path d="M 22 4 V 26 M 28 4 V 26 M 34 4 V 26" />
+    <path d="M 19 26 H 37" />
+    <path d="M 28 26 V 72" />
+  </g>
+
+  <!-- N OTHERWORLD -->
+  <text class="rio-text" x="620" y="78">N OTHERWORLD</text>
+</svg>
