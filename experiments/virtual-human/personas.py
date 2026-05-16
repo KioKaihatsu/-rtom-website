@@ -31,6 +31,7 @@ def build_cohort() -> list[Persona]:
             media_diet={"News web": 0.30, "TV": 0.25, "YouTube": 0.18,
                         "X": 0.15, "Podcast": 0.12},
             price_sensitivity=0.50, wallet=60000,
+            workplace_id="bank_otemachi",
         ),
         # 2. 巣鴨在住の看護師
         _p(
@@ -47,6 +48,7 @@ def build_cohort() -> list[Persona]:
             media_diet={"Instagram": 0.30, "YouTube": 0.25, "X": 0.10,
                         "Podcast": 0.20, "News web": 0.15},
             price_sensitivity=0.55, wallet=40000,
+            workplace_id="komagome_hospital",
         ),
         # 3. 田端の退職者
         _p(
@@ -80,6 +82,7 @@ def build_cohort() -> list[Persona]:
             media_diet={"Instagram": 0.45, "TikTok": 0.25, "YouTube": 0.15,
                         "X": 0.10, "News web": 0.05},
             price_sensitivity=0.78, wallet=18000,
+            workplace_id="ikebukuro_salon",
         ),
         # 5. 文京区千石の在宅エンジニア
         _p(
@@ -129,6 +132,7 @@ def build_cohort() -> list[Persona]:
             media_diet={"TV": 0.35, "X": 0.20, "YouTube": 0.20,
                         "News web": 0.15, "Instagram": 0.10},
             price_sensitivity=0.55, wallet=45000, works_weekdays=False,
+            workplace_id="oyama_izakaya",
         ),
         # 8. 高田馬場の大学生
         _p(
@@ -146,6 +150,7 @@ def build_cohort() -> list[Persona]:
             media_diet={"Instagram": 0.30, "TikTok": 0.35, "YouTube": 0.20,
                         "X": 0.10, "News web": 0.05},
             price_sensitivity=0.85, wallet=12000, works_weekdays=False,
+            workplace_id="waseda_univ",
         ),
         # 9. 世田谷の広告代理店勤務
         _p(
@@ -163,6 +168,7 @@ def build_cohort() -> list[Persona]:
             media_diet={"Instagram": 0.34, "YouTube": 0.22, "X": 0.15,
                         "TV": 0.08, "Podcast": 0.11, "News web": 0.10},
             price_sensitivity=0.42, wallet=55000,
+            workplace_id="shibuya_agency",
         ),
         # 10. 赤羽の公務員
         _p(
@@ -179,6 +185,7 @@ def build_cohort() -> list[Persona]:
             media_diet={"News web": 0.30, "YouTube": 0.25, "TV": 0.20,
                         "X": 0.15, "Podcast": 0.10},
             price_sensitivity=0.62, wallet=42000,
+            workplace_id="kita_kuyakusho",
         ),
         # 11. 西日暮里の主婦
         _p(
@@ -211,5 +218,6 @@ def build_cohort() -> list[Persona]:
             media_diet={"YouTube": 0.45, "TikTok": 0.20, "X": 0.15,
                         "Instagram": 0.10, "News web": 0.10},
             price_sensitivity=0.88, wallet=22000,
+            workplace_id="kawaguchi_factory",
         ),
     ]

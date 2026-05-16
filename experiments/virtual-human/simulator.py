@@ -1,21 +1,26 @@
 """Hour-by-hour behavioural simulator.
 
-Location-aware: persona's distance from 霜降銀座商店街 modulates how often
-shotengai-specific actions appear. The Shimofuri Ginza grocery / dining /
-stroll actions are the marketing surface we care about.
+Each tick produces a structured event with the persona's geographic location,
+financial deltas, and marketing touchpoints. Output is suitable for the map
+monitor in monitor.py.
 """
 from __future__ import annotations
 
-import json
+import math
 import random
 from dataclasses import asdict
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 from environment import World, make_world
 from geo import visit_propensity
 from persona import Persona
+from places import (
+    SHIMOFURI_GINZA,
+    RIO,
+    WORKPLACES,
+    Place,
+)
 
 
 # --- Action catalog ---------------------------------------------------------
@@ -46,6 +51,8 @@ ACTIONS = {
     "shimofuri_stroll":  {"energy": -0.04, "mood": +0.08, "stress": -0.05, "cost": 800},
 }
 
+WORK_ACTIONS = {"work", "wfh_work"}
+
 
 # --- Decision policy --------------------------------------------------------
 
@@ -57,7 +64,6 @@ def _score(persona: Persona, world: World, action: str, rng: random.Random) -> f
     working_day = (not weekend) and t.works_weekdays
     score = 0.0
 
-    # Time-of-day priors
     if action == "sleep":
         if hour < 6 or hour >= 23:
             score += 5
@@ -89,19 +95,18 @@ def _score(persona: Persona, world: World, action: str, rng: random.Random) -> f
     if action == "instagram_scroll" and hour in (7, 12, 21, 22):
         score += 1.4
 
-    # State-driven needs
     if action == "cafe_break" and 14 <= hour <= 16 and s.stress > 0.5:
         score += 2
     if action == "workout" and weekend and 8 <= hour <= 11:
-        score += 2 + (1 - s.energy)
+        # Personality-weighted: conscientious / young people work out more.
+        score += t.conscientiousness * 1.5 + max(0, (35 - t.age) / 30)
     if action == "grocery" and weekend and 10 <= hour <= 18:
-        score += 1.5
+        score += 1.0
     if action == "shimofuri_grocery" and 10 <= hour <= 19:
-        score += 1.4
+        score += 1.2
     if action == "shimofuri_stroll" and weekend and 11 <= hour <= 17:
-        score += 1.6
+        score += 1.4
 
-    # Personality / preference
     if action == "shopping_apparel":
         score += t.openness * 1.0 + (1 - t.price_sensitivity) * 1.0
         if weekend and 12 <= hour <= 17:
@@ -114,7 +119,6 @@ def _score(persona: Persona, world: World, action: str, rng: random.Random) -> f
         else:
             score -= 5
 
-    # Shimofuri Ginza distance gate
     if action.startswith("shimofuri_"):
         propensity = visit_propensity(t.home.km_from_shimofuri())
         affinity = t.brand_affinity.get("Riverbed in Otherworld", 0.3)
@@ -122,7 +126,6 @@ def _score(persona: Persona, world: World, action: str, rng: random.Random) -> f
         if action == "shimofuri_dining":
             score += affinity * 1.5
 
-    # Environment effects
     if world.weather == "rainy":
         if action in ("shopping_apparel", "dinner_out", "shimofuri_stroll"):
             score -= 1.5
@@ -133,12 +136,10 @@ def _score(persona: Persona, world: World, action: str, rng: random.Random) -> f
     if world.temperature_c <= 10 and action in ("dinner_out", "shimofuri_dining"):
         score -= 0.3
 
-    # Repetition penalty — discourage same action 3+ ticks in a row
     streak = sum(1 for a in s.recent_actions if a == action)
     if streak >= 2 and action not in ("sleep", "work", "wfh_work"):
         score -= streak * 2.0
 
-    # Budget gate
     cost = ACTIONS[action]["cost"]
     if cost > s.wallet_jpy:
         return -999
@@ -155,17 +156,114 @@ def decide_action(persona: Persona, world: World, rng: random.Random) -> str:
     return scored[0][0]
 
 
+# --- Location resolution ---------------------------------------------------
+
+def _home_place(persona: Persona) -> Place:
+    h = persona.traits.home
+    return Place(f"home_{persona.traits.name}", h.name, h.lat, h.lng, "home")
+
+
+def _near(base_lat: float, base_lng: float, jitter: float, rng: random.Random):
+    """Tiny offset so multiple personas at same place don't overlap exactly."""
+    return (
+        base_lat + rng.uniform(-jitter, jitter),
+        base_lng + rng.uniform(-jitter, jitter),
+    )
+
+
+def resolve_location(
+    persona: Persona, action: str, rng: random.Random
+) -> tuple[Place, float, float]:
+    """Return (canonical place, jittered lat, jittered lng)."""
+    t = persona.traits
+    home = _home_place(persona)
+    work = WORKPLACES.get(t.workplace_id) if t.workplace_id else None
+
+    # Shimofuri Ginza specific
+    if action == "shimofuri_dining":
+        lat, lng = _near(RIO.lat, RIO.lng, 0.00015, rng)
+        return RIO, lat, lng
+    if action.startswith("shimofuri_"):
+        lat, lng = _near(SHIMOFURI_GINZA.lat, SHIMOFURI_GINZA.lng, 0.00040, rng)
+        return SHIMOFURI_GINZA, lat, lng
+
+    # Work area
+    if action in WORK_ACTIONS or action == "coworker_chat":
+        if work and action != "wfh_work":
+            lat, lng = _near(work.lat, work.lng, 0.00060, rng)
+            return work, lat, lng
+        # WFH or no workplace → at home
+        lat, lng = _near(home.lat, home.lng, 0.00040, rng)
+        return home, lat, lng
+
+    if action == "commute":
+        # End of commute hour = AT work (morning) or AT home (evening).
+        # Caller decides based on hour, but we return workplace by default;
+        # the simulator overrides for evening commute below.
+        if work:
+            lat, lng = _near(work.lat, work.lng, 0.00060, rng)
+            return work, lat, lng
+        return home, home.lat, home.lng
+
+    if action in ("lunch_out", "lunch_konbini", "cafe_break"):
+        anchor = work if work else home
+        lat, lng = _near(anchor.lat, anchor.lng, 0.0012, rng)  # ~120m radius
+        return anchor, lat, lng
+
+    if action == "shopping_apparel":
+        # Shopping districts: choose the closest of Ikebukuro/Shinjuku/Shibuya.
+        candidates = [
+            ("ikebukuro", 35.7295, 139.7110),
+            ("shinjuku", 35.6896, 139.7006),
+            ("shibuya", 35.6594, 139.7005),
+        ]
+        d_min = min(candidates, key=lambda c: (c[1] - home.lat) ** 2 + (c[2] - home.lng) ** 2)
+        lat, lng = _near(d_min[1], d_min[2], 0.0020, rng)
+        return Place(d_min[0], d_min[0].title(), d_min[1], d_min[2], "apparel"), lat, lng
+
+    if action == "dinner_out":
+        lat, lng = _near(home.lat, home.lng, 0.0020, rng)
+        return Place("dinner_out", "近所の飲食店", home.lat, home.lng, "restaurant"), lat, lng
+
+    if action == "grocery":
+        lat, lng = _near(home.lat, home.lng, 0.0018, rng)
+        return Place("grocery_local", "近所のスーパー", home.lat, home.lng, "supermarket"), lat, lng
+
+    if action == "workout":
+        lat, lng = _near(home.lat, home.lng, 0.0025, rng)
+        return Place("park_local", "近所の公園", home.lat, home.lng, "park"), lat, lng
+
+    # Default: at home
+    lat, lng = _near(home.lat, home.lng, 0.0001, rng)
+    return home, lat, lng
+
+
+# --- State updates ---------------------------------------------------------
+
 def _apply(persona: Persona, action: str) -> None:
     effects = ACTIONS[action]
     s = persona.state
     for k, v in effects.items():
         if k == "cost":
             s.wallet_jpy -= v
+            s.spent_today_jpy += v
         else:
             current = getattr(s, k)
             setattr(s, k, max(0.0, min(1.0, current + v)))
     s.last_action = action
     s.recent_actions = (s.recent_actions + [action])[-3:]
+
+    if action in WORK_ACTIONS:
+        wage = persona.traits.hourly_wage_jpy
+        s.wallet_jpy += wage
+        s.earned_today_jpy += wage
+
+
+def _haversine_km(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    # Flat-earth approximation good enough for <30km city-scale tracks.
+    dlat = (lat2 - lat1) * 111.0
+    dlng = (lng2 - lng1) * 111.0 * math.cos(math.radians((lat1 + lat2) / 2))
+    return math.hypot(dlat, dlng)
 
 
 # --- Touchpoint extraction --------------------------------------------------
@@ -204,19 +302,41 @@ def simulate_day(
 ) -> list[dict[str, Any]]:
     rng = random.Random(seed)
     events: list[dict[str, Any]] = []
+    prev_lat = persona.traits.home.lat
+    prev_lng = persona.traits.home.lng
+
     for hour in range(24):
         world = make_world(start, hour, rng)
         action = decide_action(persona, world, rng)
-        tp = touchpoint(persona, action, rng)
-        events.append(
-            {
-                "tick": hour,
-                "world": world.snapshot(),
-                "action": action,
-                "cost_jpy": ACTIONS[action]["cost"],
-                "touchpoint": tp,
-                "state": asdict(persona.state),
-            }
-        )
+
+        # For 18:00 commute (evening), the destination is HOME, not workplace.
+        place, lat, lng = resolve_location(persona, action, rng)
+        if action == "commute" and hour >= 17:
+            home = _home_place(persona)
+            place = home
+            lat, lng = _near(home.lat, home.lng, 0.00050, rng)
+
+        # Distance traveled since last tick
+        dist = _haversine_km(prev_lat, prev_lng, lat, lng)
+        persona.state.distance_km_today += dist
+        prev_lat, prev_lng = lat, lng
+
         _apply(persona, action)
+        tp = touchpoint(persona, action, rng)
+
+        events.append({
+            "tick": hour,
+            "world": world.snapshot(),
+            "action": action,
+            "place_id": place.id,
+            "place_name": place.name,
+            "place_kind": place.kind,
+            "lat": round(lat, 6),
+            "lng": round(lng, 6),
+            "tick_distance_km": round(dist, 3),
+            "cost_jpy": ACTIONS[action]["cost"],
+            "wage_jpy": persona.traits.hourly_wage_jpy if action in WORK_ACTIONS else 0,
+            "touchpoint": tp,
+            "state": asdict(persona.state),
+        })
     return events
