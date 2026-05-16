@@ -1,8 +1,7 @@
 """Virtual human persona definition."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
-from typing import Any
+from dataclasses import dataclass, field
 
 from geo import GeoPoint
 
@@ -38,30 +37,10 @@ class Traits:
 
 @dataclass
 class State:
-    mood: float = 0.6
-    energy: float = 0.8
-    hunger: float = 0.2
-    stress: float = 0.3
-    wallet_jpy: int = 35000
-    earned_today_jpy: int = 0
-    spent_today_jpy: int = 0
-    distance_km_today: float = 0.0
-    location: str = "home"
-    last_action: str = "sleep"
-    recent_actions: list[str] = field(default_factory=list)  # last 3 ticks
+    wallet_jpy: int = 35000  # starting cash for the day
 
 
 @dataclass
 class Persona:
     traits: Traits
     state: State = field(default_factory=State)
-
-    def snapshot(self) -> dict[str, Any]:
-        d = asdict(self.traits)
-        d["home"] = {
-            "name": self.traits.home.name,
-            "lat": self.traits.home.lat,
-            "lng": self.traits.home.lng,
-            "km_from_shimofuri": round(self.traits.home.km_from_shimofuri(), 2),
-        }
-        return {"traits": d, "state": asdict(self.state)}
