@@ -1,0 +1,215 @@
+"""12 personas living within ~15km of 霜降銀座商店街.
+
+Coordinates are approximate centroids of each neighbourhood.
+"""
+from __future__ import annotations
+
+from geo import GeoPoint
+from persona import Persona, Traits, State
+
+
+def _p(**kw) -> Persona:
+    initial_wallet = kw.pop("wallet", 35000)
+    traits = Traits(**kw)
+    return Persona(traits=traits, state=State(wallet_jpy=initial_wallet))
+
+
+def build_cohort() -> list[Persona]:
+    return [
+        # 1. 駒込在住・霜降銀座のすぐ近く
+        _p(
+            name="田中 浩二",
+            age=45, gender="male",
+            occupation="銀行員（支店長代理）",
+            income_jpy_year=8_500_000,
+            home=GeoPoint("駒込 1丁目", 35.7388, 139.7475),
+            household="妻 + 子1人",
+            openness=0.42, conscientiousness=0.78, extraversion=0.50,
+            agreeableness=0.65, neuroticism=0.40,
+            brand_affinity={"Starbucks": 0.55, "Uniqlo": 0.72, "MUJI": 0.60,
+                            "Amazon": 0.80, "Riverbed in Otherworld": 0.78},
+            media_diet={"News web": 0.30, "TV": 0.25, "YouTube": 0.18,
+                        "X": 0.15, "Podcast": 0.12},
+            price_sensitivity=0.50, wallet=60000,
+        ),
+        # 2. 巣鴨在住の看護師
+        _p(
+            name="山本 結衣",
+            age=32, gender="female",
+            occupation="看護師（夜勤あり）",
+            income_jpy_year=4_800_000,
+            home=GeoPoint("巣鴨 4丁目", 35.7332, 139.7390),
+            household="一人暮らし",
+            openness=0.55, conscientiousness=0.82, extraversion=0.45,
+            agreeableness=0.78, neuroticism=0.55,
+            brand_affinity={"Starbucks": 0.62, "Uniqlo": 0.70, "MUJI": 0.68,
+                            "Amazon": 0.85, "Riverbed in Otherworld": 0.65},
+            media_diet={"Instagram": 0.30, "YouTube": 0.25, "X": 0.10,
+                        "Podcast": 0.20, "News web": 0.15},
+            price_sensitivity=0.55, wallet=40000,
+        ),
+        # 3. 田端の退職者
+        _p(
+            name="小林 章",
+            age=68, gender="male",
+            occupation="退職（元 商社）",
+            income_jpy_year=2_800_000,
+            home=GeoPoint("田端 3丁目", 35.7385, 139.7610),
+            household="妻と二人暮らし",
+            openness=0.60, conscientiousness=0.70, extraversion=0.55,
+            agreeableness=0.75, neuroticism=0.30,
+            brand_affinity={"Starbucks": 0.30, "MUJI": 0.55,
+                            "Amazon": 0.50, "Riverbed in Otherworld": 0.88},
+            media_diet={"TV": 0.50, "News web": 0.25, "Podcast": 0.10,
+                        "YouTube": 0.10, "X": 0.05},
+            price_sensitivity=0.45, wallet=50000,
+        ),
+        # 4. 池袋の美容師
+        _p(
+            name="鈴木 芽依",
+            age=24, gender="female",
+            occupation="美容師（アシスタント）",
+            income_jpy_year=2_800_000,
+            home=GeoPoint("池袋 2丁目", 35.7295, 139.7090),
+            household="シェアハウス",
+            openness=0.85, conscientiousness=0.50, extraversion=0.80,
+            agreeableness=0.68, neuroticism=0.60,
+            brand_affinity={"Starbucks": 0.78, "Blue Bottle": 0.82,
+                            "ZARA": 0.75, "Uniqlo": 0.60,
+                            "Amazon": 0.70, "Riverbed in Otherworld": 0.45},
+            media_diet={"Instagram": 0.45, "TikTok": 0.25, "YouTube": 0.15,
+                        "X": 0.10, "News web": 0.05},
+            price_sensitivity=0.78, wallet=18000,
+        ),
+        # 5. 文京区千石の在宅エンジニア
+        _p(
+            name="渡辺 健",
+            age=38, gender="male",
+            occupation="ソフトウェアエンジニア（フルリモート）",
+            income_jpy_year=9_500_000,
+            home=GeoPoint("文京区 千石", 35.7283, 139.7398),
+            household="パートナーと二人暮らし",
+            openness=0.80, conscientiousness=0.68, extraversion=0.30,
+            agreeableness=0.60, neuroticism=0.45,
+            brand_affinity={"Blue Bottle": 0.85, "MUJI": 0.80,
+                            "Amazon": 0.92, "Riverbed in Otherworld": 0.70},
+            media_diet={"YouTube": 0.30, "Podcast": 0.30, "X": 0.20,
+                        "News web": 0.15, "Instagram": 0.05},
+            price_sensitivity=0.30, wallet=80000, work_from_home=True,
+        ),
+        # 6. 王子のフリーランスデザイナー
+        _p(
+            name="伊藤 桜",
+            age=29, gender="female",
+            occupation="フリーランス グラフィックデザイナー",
+            income_jpy_year=4_200_000,
+            home=GeoPoint("北区 王子", 35.7530, 139.7385),
+            household="一人暮らし",
+            openness=0.90, conscientiousness=0.55, extraversion=0.62,
+            agreeableness=0.72, neuroticism=0.58,
+            brand_affinity={"Blue Bottle": 0.88, "MUJI": 0.78,
+                            "ZARA": 0.55, "Amazon": 0.75,
+                            "Riverbed in Otherworld": 0.82},
+            media_diet={"Instagram": 0.40, "YouTube": 0.20, "Podcast": 0.15,
+                        "X": 0.15, "News web": 0.10},
+            price_sensitivity=0.48, wallet=32000, work_from_home=True,
+        ),
+        # 7. 板橋大山の飲食店店主
+        _p(
+            name="中村 大輔",
+            age=52, gender="male",
+            occupation="居酒屋店主",
+            income_jpy_year=5_500_000,
+            home=GeoPoint("板橋区 大山", 35.7530, 139.6970),
+            household="妻と二人暮らし",
+            openness=0.62, conscientiousness=0.70, extraversion=0.78,
+            agreeableness=0.80, neuroticism=0.35,
+            brand_affinity={"Amazon": 0.65, "Riverbed in Otherworld": 0.60,
+                            "Uniqlo": 0.60},
+            media_diet={"TV": 0.35, "X": 0.20, "YouTube": 0.20,
+                        "News web": 0.15, "Instagram": 0.10},
+            price_sensitivity=0.55, wallet=45000, works_weekdays=False,
+        ),
+        # 8. 高田馬場の大学生
+        _p(
+            name="高橋 葵",
+            age=19, gender="female",
+            occupation="大学生（早稲田）",
+            income_jpy_year=1_000_000,
+            home=GeoPoint("高田馬場", 35.7128, 139.7038),
+            household="一人暮らし（仕送り）",
+            openness=0.78, conscientiousness=0.45, extraversion=0.70,
+            agreeableness=0.65, neuroticism=0.55,
+            brand_affinity={"Starbucks": 0.80, "Uniqlo": 0.75,
+                            "ZARA": 0.62, "Amazon": 0.78,
+                            "Riverbed in Otherworld": 0.50},
+            media_diet={"Instagram": 0.30, "TikTok": 0.35, "YouTube": 0.20,
+                        "X": 0.10, "News web": 0.05},
+            price_sensitivity=0.85, wallet=12000, works_weekdays=False,
+        ),
+        # 9. 世田谷の広告代理店勤務
+        _p(
+            name="佐藤 美咲",
+            age=29, gender="female",
+            occupation="広告代理店 アカウントプランナー",
+            income_jpy_year=5_200_000,
+            home=GeoPoint("世田谷 三軒茶屋", 35.6438, 139.6705),
+            household="一人暮らし",
+            openness=0.78, conscientiousness=0.62, extraversion=0.55,
+            agreeableness=0.70, neuroticism=0.48,
+            brand_affinity={"Starbucks": 0.72, "Blue Bottle": 0.81,
+                            "Uniqlo": 0.65, "ZARA": 0.58, "MUJI": 0.74,
+                            "Amazon": 0.88, "Riverbed in Otherworld": 0.40},
+            media_diet={"Instagram": 0.34, "YouTube": 0.22, "X": 0.15,
+                        "TV": 0.08, "Podcast": 0.11, "News web": 0.10},
+            price_sensitivity=0.42, wallet=55000,
+        ),
+        # 10. 赤羽の公務員
+        _p(
+            name="林 涼",
+            age=35, gender="male",
+            occupation="区役所職員",
+            income_jpy_year=5_800_000,
+            home=GeoPoint("北区 赤羽", 35.7780, 139.7205),
+            household="妻 + 子0歳",
+            openness=0.48, conscientiousness=0.80, extraversion=0.45,
+            agreeableness=0.78, neuroticism=0.42,
+            brand_affinity={"Uniqlo": 0.80, "MUJI": 0.75,
+                            "Amazon": 0.82, "Riverbed in Otherworld": 0.55},
+            media_diet={"News web": 0.30, "YouTube": 0.25, "TV": 0.20,
+                        "X": 0.15, "Podcast": 0.10},
+            price_sensitivity=0.62, wallet=42000,
+        ),
+        # 11. 西日暮里の主婦
+        _p(
+            name="森 花",
+            age=41, gender="female",
+            occupation="主婦（パート週2）",
+            income_jpy_year=1_500_000,
+            home=GeoPoint("荒川区 西日暮里", 35.7321, 139.7669),
+            household="夫 + 子2人（小学生）",
+            openness=0.55, conscientiousness=0.80, extraversion=0.55,
+            agreeableness=0.82, neuroticism=0.50,
+            brand_affinity={"Uniqlo": 0.85, "MUJI": 0.78,
+                            "Amazon": 0.75, "Riverbed in Otherworld": 0.72},
+            media_diet={"Instagram": 0.25, "YouTube": 0.30, "TV": 0.25,
+                        "News web": 0.15, "X": 0.05},
+            price_sensitivity=0.78, wallet=28000, works_weekdays=False,
+        ),
+        # 12. 川口の工場勤務
+        _p(
+            name="井上 達也",
+            age=27, gender="male",
+            occupation="自動車部品工場（夜勤シフト）",
+            income_jpy_year=3_600_000,
+            home=GeoPoint("埼玉県 川口", 35.8076, 139.7240),
+            household="一人暮らし",
+            openness=0.40, conscientiousness=0.60, extraversion=0.40,
+            agreeableness=0.55, neuroticism=0.50,
+            brand_affinity={"Uniqlo": 0.65, "Amazon": 0.88,
+                            "Riverbed in Otherworld": 0.25},
+            media_diet={"YouTube": 0.45, "TikTok": 0.20, "X": 0.15,
+                        "Instagram": 0.10, "News web": 0.10},
+            price_sensitivity=0.88, wallet=22000,
+        ),
+    ]

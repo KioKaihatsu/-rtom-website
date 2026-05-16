@@ -1,57 +1,100 @@
-# Virtual Human PoC
+# Virtual Human PoC — 霜降銀座コホート監視ツール
 
-仮想人格に環境変数（時刻・天候・気温・曜日）を与え、1日の行動と
-マーケティング接触をシミュレートする最小プロトタイプ。
+仮想人格12名（駒込 = 霜降銀座商店街から半径15km圏に分布）に環境変数
+（時刻・気温・天気・湿度）と性格・収入・嗜好を与え、24時間の行動を
+シミュレートして霜降銀座および "Riverbed in Otherworld" への接触を観察するツール。
 
 ## 構成
 
 | ファイル | 役割 |
 | --- | --- |
-| `persona.py` | 人格定義（Big Five・収入・ブランド嗜好・メディア配分） |
-| `environment.py` | 世界モデル（時刻進行、気温日内変動、天気抽選） |
-| `simulator.py` | 1時間刻みの意思決定ループと接点ログ出力 |
-| `out/` | 実行結果 JSON（persona / events / summary） |
+| `geo.py` | 霜降銀座原点の距離計算 / 来訪確率カーブ |
+| `persona.py` | 人格と内部状態のデータクラス |
+| `personas.py` | 12名のコホート（駒込/巣鴨/田端/池袋/千石/王子/大山/高田馬場/三軒茶屋/赤羽/西日暮里/川口） |
+| `environment.py` | 時刻進行・気温日内変動・天気抽選 |
+| `simulator.py` | スコアリング型行動選択 + 接点抽出 |
+| `monitor.py` | コホート全体の動きを毎時表示する監視CLI |
 
 ## 実行
 
 ```bash
 cd experiments/virtual-human
-python3 simulator.py
+python3 monitor.py                       # アニメーション付き
+python3 monitor.py --no-anim             # 即実行
+python3 monitor.py --date 2026-05-18     # 月曜（平日）
+python3 monitor.py --no-anim --json out  # JSONも書き出し
 ```
 
-## 設計メモ
+## 監視ツールの読み方
 
-- 意思決定は「行動候補ごとにスコア付け→最大値を選択」の rule-based。
-  時間帯バイアス・内部状態（空腹/疲労/ストレス）・性格・環境・予算で加点減点する。
-- 各行動には `ACTIONS` テーブルで状態変化と費用が定義され、選択後に
-  `state` を更新する。
-- 一部の行動は `TOUCHPOINTS` でチャネル＋候補ブランドにマッピングされ、
-  人格の `brand_affinity` を重みにブランド露出を抽選する。
+毎時、12名の現在地・行動・状態（E=energy / H=hunger / S=stress, 0-9）と
+支出を表で表示。霜降銀座系の行動は **シアン**、Riverbed in Otherworld 来店候補は
+**黄色** でハイライト。
+
+24時間ループ後にダッシュボード：
+
+- **チャネル別接触数** — 霜降銀座は専用カウンタ
+- **ブランド露出** — 居酒屋・カフェ・RIO 等
+- **🥬 霜降銀座への来訪** — 人 × 時間 × 行動の生ログ
+- **⭐ RIO 来店候補** — 営業時間帯と来訪者
+- **時間帯ヒートマップ** — 商店街の混雑予測
+- **距離 × 来訪** — 距離減衰の検証
+
+## 来訪確率モデル（`geo.visit_propensity`）
+
+```
+< 1.2km : 1.00        徒歩圏 = 日常使い
+1.2-5km : 0.55 * e^-((d-1.2)/3)   週末・用事ベース
+  5-10km: 0.15 * e^-((d-5)/4)     目的地化が必要
+   >10km: 0.03 * e^-((d-10)/5)    観光・話題性のみ
+```
+
+ペルソナの `brand_affinity["Riverbed in Otherworld"]` を掛け合わせ、
+さらに性格・天気・時間帯で加点減点。
 
 ## Claude API への差し替え
 
-`decide_action(persona, world, rng)` を以下のようなプロンプトに置き換えれば、
-LLM ベースの行動選択になる：
+`simulator.decide_action(persona, world, rng)` を以下のような Claude 呼び出し
+で置き換えれば、ルールベース→LLM 駆動になる：
 
 ```python
-prompt = f"""
-あなたは以下の人物です。
-{json.dumps(persona.snapshot(), ensure_ascii=False)}
+import anthropic
 
-現在の環境:
-{json.dumps(world.snapshot(), ensure_ascii=False)}
+client = anthropic.Anthropic()
 
-次の1時間にとる行動を ACTIONS から1つ選び、理由を50字以内で添えて
-JSON で返してください。
-"""
+def decide_action_llm(persona, world, rng):
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=200,
+        system=[
+            {
+                "type": "text",
+                "text": f"あなたは以下の人物です:\n{json.dumps(persona.snapshot(), ensure_ascii=False)}\n"
+                        f"行動候補: {list(ACTIONS.keys())}\n"
+                        f"必ず候補から1つだけ JSON で返してください: {{\"action\": \"...\"}}",
+                "cache_control": {"type": "ephemeral"},  # ペルソナ部分は固定
+            }
+        ],
+        messages=[
+            {"role": "user", "content": f"現在の環境: {json.dumps(world.snapshot(), ensure_ascii=False)}"}
+        ],
+    )
+    return json.loads(resp.content[0].text)["action"]
 ```
 
-プロンプトキャッシュで `persona.snapshot()` を固定ブロックにすれば
-24 ティック × 多数のペルソナでもコスト効率が良い。
+ペルソナ24時間 × 12人 = 288 推論。Haiku 4.5 + プロンプトキャッシュなら
+1日数十円のオーダーで回せる。
 
-## 次の拡張候補
+## 既知の単純化
 
-1. **ペルソナ生成器** — 統計局データを seed に N 人分を自動生成
-2. **広告露出インジェクタ** — シミュレーション中に施策を投入し反応を観測
-3. **記憶レイヤ** — 過去の購買・接触をベクタDBに蓄積して長期効果を測定
-4. **キャリブレーション** — 実 POS/行動ログとのKLダイバージェンス最小化
+- 個別ペルソナ間の相互作用なし（友人と一緒に食事 等は未実装）
+- 天気は全員共通（東京一帯を1セルとして扱う）
+- 行動カタログは20種類のみ — 実運用では業種別に拡張
+- Big Five と意思決定の結合はヒューリスティック（実データで校正必要）
+
+## 次の拡張
+
+1. **広告露出インジェクタ** — シミュレーション中に施策を投入し反応を観測
+2. **記憶レイヤ** — 過去の購買・接触を保持して「リピート率」を測定
+3. **キャリブレーション** — 商店街実 POS / 通行量データで重み調整
+4. **N=1000 スケール** — ペルソナ自動生成 + 並列実行
