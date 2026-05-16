@@ -1,0 +1,818 @@
+[
+  {
+    "tick": 0,
+    "world": {
+      "datetime": "2026-05-16T00:00:00",
+      "hour": 0,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 13.7,
+      "weather": "sunny",
+      "humidity": 0.57
+    },
+    "pre_state": {
+      "mood": 0.6,
+      "energy": 0.8,
+      "hunger": 0.2,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    },
+    "action": "sleep",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.62,
+      "energy": 0.92,
+      "hunger": 0.25,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    }
+  },
+  {
+    "tick": 1,
+    "world": {
+      "datetime": "2026-05-16T01:00:00",
+      "hour": 1,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 14.8,
+      "weather": "sunny",
+      "humidity": 0.59
+    },
+    "pre_state": {
+      "mood": 0.62,
+      "energy": 0.92,
+      "hunger": 0.25,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    },
+    "action": "sleep",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.64,
+      "energy": 1.0,
+      "hunger": 0.3,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    }
+  },
+  {
+    "tick": 2,
+    "world": {
+      "datetime": "2026-05-16T02:00:00",
+      "hour": 2,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 13.4,
+      "weather": "sunny",
+      "humidity": 0.58
+    },
+    "pre_state": {
+      "mood": 0.64,
+      "energy": 1.0,
+      "hunger": 0.3,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    },
+    "action": "sleep",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.66,
+      "energy": 1.0,
+      "hunger": 0.35,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    }
+  },
+  {
+    "tick": 3,
+    "world": {
+      "datetime": "2026-05-16T03:00:00",
+      "hour": 3,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 14.6,
+      "weather": "sunny",
+      "humidity": 0.57
+    },
+    "pre_state": {
+      "mood": 0.66,
+      "energy": 1.0,
+      "hunger": 0.35,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    },
+    "action": "sleep",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.68,
+      "energy": 1.0,
+      "hunger": 0.39999999999999997,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    }
+  },
+  {
+    "tick": 4,
+    "world": {
+      "datetime": "2026-05-16T04:00:00",
+      "hour": 4,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 13.3,
+      "weather": "sunny",
+      "humidity": 0.51
+    },
+    "pre_state": {
+      "mood": 0.68,
+      "energy": 1.0,
+      "hunger": 0.39999999999999997,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    },
+    "action": "sleep",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.7000000000000001,
+      "energy": 1.0,
+      "hunger": 0.44999999999999996,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    }
+  },
+  {
+    "tick": 5,
+    "world": {
+      "datetime": "2026-05-16T05:00:00",
+      "hour": 5,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 14.0,
+      "weather": "sunny",
+      "humidity": 0.52
+    },
+    "pre_state": {
+      "mood": 0.7000000000000001,
+      "energy": 1.0,
+      "hunger": 0.44999999999999996,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    },
+    "action": "sleep",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.7200000000000001,
+      "energy": 1.0,
+      "hunger": 0.49999999999999994,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    }
+  },
+  {
+    "tick": 6,
+    "world": {
+      "datetime": "2026-05-16T06:00:00",
+      "hour": 6,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 15.5,
+      "weather": "sunny",
+      "humidity": 0.51
+    },
+    "pre_state": {
+      "mood": 0.7200000000000001,
+      "energy": 1.0,
+      "hunger": 0.49999999999999994,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "sleep"
+    },
+    "action": "morning_routine",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.7500000000000001,
+      "energy": 0.98,
+      "hunger": 0.58,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "morning_routine"
+    }
+  },
+  {
+    "tick": 7,
+    "world": {
+      "datetime": "2026-05-16T07:00:00",
+      "hour": 7,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 16.5,
+      "weather": "sunny",
+      "humidity": 0.58
+    },
+    "pre_state": {
+      "mood": 0.7500000000000001,
+      "energy": 0.98,
+      "hunger": 0.58,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "morning_routine"
+    },
+    "action": "morning_routine",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.7800000000000001,
+      "energy": 0.96,
+      "hunger": 0.6599999999999999,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "morning_routine"
+    }
+  },
+  {
+    "tick": 8,
+    "world": {
+      "datetime": "2026-05-16T08:00:00",
+      "hour": 8,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 18.9,
+      "weather": "cloudy",
+      "humidity": 0.53
+    },
+    "pre_state": {
+      "mood": 0.7800000000000001,
+      "energy": 0.96,
+      "hunger": 0.6599999999999999,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "morning_routine"
+    },
+    "action": "morning_routine",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.8100000000000002,
+      "energy": 0.94,
+      "hunger": 0.7399999999999999,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "morning_routine"
+    }
+  },
+  {
+    "tick": 9,
+    "world": {
+      "datetime": "2026-05-16T09:00:00",
+      "hour": 9,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 18.0,
+      "weather": "sunny",
+      "humidity": 0.53
+    },
+    "pre_state": {
+      "mood": 0.8100000000000002,
+      "energy": 0.94,
+      "hunger": 0.7399999999999999,
+      "stress": 0.3,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "morning_routine"
+    },
+    "action": "workout",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 0.9100000000000001,
+      "energy": 0.82,
+      "hunger": 0.7399999999999999,
+      "stress": 0.19999999999999998,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "workout"
+    }
+  },
+  {
+    "tick": 10,
+    "world": {
+      "datetime": "2026-05-16T10:00:00",
+      "hour": 10,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 19.3,
+      "weather": "cloudy",
+      "humidity": 0.59
+    },
+    "pre_state": {
+      "mood": 0.9100000000000001,
+      "energy": 0.82,
+      "hunger": 0.7399999999999999,
+      "stress": 0.19999999999999998,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "workout"
+    },
+    "action": "workout",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.7,
+      "hunger": 0.7399999999999999,
+      "stress": 0.09999999999999998,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "workout"
+    }
+  },
+  {
+    "tick": 11,
+    "world": {
+      "datetime": "2026-05-16T11:00:00",
+      "hour": 11,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 20.3,
+      "weather": "cloudy",
+      "humidity": 0.6
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.7,
+      "hunger": 0.7399999999999999,
+      "stress": 0.09999999999999998,
+      "wallet_jpy": 35000,
+      "location": "home",
+      "last_action": "workout"
+    },
+    "action": "lunch_konbini",
+    "cost_jpy": 650,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": null
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.73,
+      "hunger": 0.28999999999999987,
+      "stress": 0.09999999999999998,
+      "wallet_jpy": 34350,
+      "location": "home",
+      "last_action": "lunch_konbini"
+    }
+  },
+  {
+    "tick": 12,
+    "world": {
+      "datetime": "2026-05-16T12:00:00",
+      "hour": 12,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 21.3,
+      "weather": "sunny",
+      "humidity": 0.51
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.73,
+      "hunger": 0.28999999999999987,
+      "stress": 0.09999999999999998,
+      "wallet_jpy": 34350,
+      "location": "home",
+      "last_action": "lunch_konbini"
+    },
+    "action": "lunch_out",
+    "cost_jpy": 1200,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": null
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.78,
+      "hunger": 0.0,
+      "stress": 0.09999999999999998,
+      "wallet_jpy": 33150,
+      "location": "home",
+      "last_action": "lunch_out"
+    }
+  },
+  {
+    "tick": 13,
+    "world": {
+      "datetime": "2026-05-16T13:00:00",
+      "hour": 13,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 22.9,
+      "weather": "cloudy",
+      "humidity": 0.53
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.78,
+      "hunger": 0.0,
+      "stress": 0.09999999999999998,
+      "wallet_jpy": 33150,
+      "location": "home",
+      "last_action": "lunch_out"
+    },
+    "action": "shopping_apparel",
+    "cost_jpy": 6800,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": "ZARA"
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.73,
+      "hunger": 0.0,
+      "stress": 0.05999999999999998,
+      "wallet_jpy": 26350,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    }
+  },
+  {
+    "tick": 14,
+    "world": {
+      "datetime": "2026-05-16T14:00:00",
+      "hour": 14,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 22.6,
+      "weather": "sunny",
+      "humidity": 0.59
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.73,
+      "hunger": 0.0,
+      "stress": 0.05999999999999998,
+      "wallet_jpy": 26350,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    },
+    "action": "shopping_apparel",
+    "cost_jpy": 6800,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": "MUJI"
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.6799999999999999,
+      "hunger": 0.0,
+      "stress": 0.019999999999999976,
+      "wallet_jpy": 19550,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    }
+  },
+  {
+    "tick": 15,
+    "world": {
+      "datetime": "2026-05-16T15:00:00",
+      "hour": 15,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 22.7,
+      "weather": "sunny",
+      "humidity": 0.59
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.6799999999999999,
+      "hunger": 0.0,
+      "stress": 0.019999999999999976,
+      "wallet_jpy": 19550,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    },
+    "action": "shopping_apparel",
+    "cost_jpy": 6800,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": "Uniqlo"
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.6299999999999999,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 12750,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    }
+  },
+  {
+    "tick": 16,
+    "world": {
+      "datetime": "2026-05-16T16:00:00",
+      "hour": 16,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 21.5,
+      "weather": "cloudy",
+      "humidity": 0.55
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.6299999999999999,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 12750,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    },
+    "action": "shopping_apparel",
+    "cost_jpy": 6800,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": "MUJI"
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.5799999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 5950,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    }
+  },
+  {
+    "tick": 17,
+    "world": {
+      "datetime": "2026-05-16T17:00:00",
+      "hour": 17,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 20.2,
+      "weather": "sunny",
+      "humidity": 0.57
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.5799999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 5950,
+      "location": "home",
+      "last_action": "shopping_apparel"
+    },
+    "action": "coworker_chat",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 5950,
+      "location": "home",
+      "last_action": "coworker_chat"
+    }
+  },
+  {
+    "tick": 18,
+    "world": {
+      "datetime": "2026-05-16T18:00:00",
+      "hour": 18,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 19.6,
+      "weather": "sunny",
+      "humidity": 0.52
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 5950,
+      "location": "home",
+      "last_action": "coworker_chat"
+    },
+    "action": "dinner_out",
+    "cost_jpy": 2400,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": null
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 3550,
+      "location": "home",
+      "last_action": "dinner_out"
+    }
+  },
+  {
+    "tick": 19,
+    "world": {
+      "datetime": "2026-05-16T19:00:00",
+      "hour": 19,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 20.2,
+      "weather": "sunny",
+      "humidity": 0.58
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 3550,
+      "location": "home",
+      "last_action": "dinner_out"
+    },
+    "action": "dinner_home",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 3550,
+      "location": "home",
+      "last_action": "dinner_home"
+    }
+  },
+  {
+    "tick": 20,
+    "world": {
+      "datetime": "2026-05-16T20:00:00",
+      "hour": 20,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 17.0,
+      "weather": "cloudy",
+      "humidity": 0.53
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 3550,
+      "location": "home",
+      "last_action": "dinner_home"
+    },
+    "action": "dinner_out",
+    "cost_jpy": 2400,
+    "touchpoint": {
+      "channel": "店舗",
+      "brand": null
+    },
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 1150,
+      "location": "home",
+      "last_action": "dinner_out"
+    }
+  },
+  {
+    "tick": 21,
+    "world": {
+      "datetime": "2026-05-16T21:00:00",
+      "hour": 21,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 16.2,
+      "weather": "rainy",
+      "humidity": 0.73
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.5599999999999998,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 1150,
+      "location": "home",
+      "last_action": "dinner_out"
+    },
+    "action": "wind_down",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.5999999999999999,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 1150,
+      "location": "home",
+      "last_action": "wind_down"
+    }
+  },
+  {
+    "tick": 22,
+    "world": {
+      "datetime": "2026-05-16T22:00:00",
+      "hour": 22,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 14.6,
+      "weather": "sunny",
+      "humidity": 0.52
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.5999999999999999,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 1150,
+      "location": "home",
+      "last_action": "wind_down"
+    },
+    "action": "wind_down",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.6399999999999999,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 1150,
+      "location": "home",
+      "last_action": "wind_down"
+    }
+  },
+  {
+    "tick": 23,
+    "world": {
+      "datetime": "2026-05-16T23:00:00",
+      "hour": 23,
+      "weekday": "Saturday",
+      "is_weekend": true,
+      "temperature_c": 13.7,
+      "weather": "cloudy",
+      "humidity": 0.59
+    },
+    "pre_state": {
+      "mood": 1.0,
+      "energy": 0.6399999999999999,
+      "hunger": 0.0,
+      "stress": 0.0,
+      "wallet_jpy": 1150,
+      "location": "home",
+      "last_action": "wind_down"
+    },
+    "action": "sleep",
+    "cost_jpy": 0,
+    "touchpoint": null,
+    "post_state": {
+      "mood": 1.0,
+      "energy": 0.7599999999999999,
+      "hunger": 0.05,
+      "stress": 0.0,
+      "wallet_jpy": 1150,
+      "location": "home",
+      "last_action": "sleep"
+    }
+  }
+]
