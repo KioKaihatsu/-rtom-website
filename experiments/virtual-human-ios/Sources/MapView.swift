@@ -20,8 +20,7 @@ struct MapView: View {
                 center: payload.origin.coordinate,
                 radius: 250
             )
-            .foregroundStyle(Color.yellow.opacity(0.06))
-            .stroke(Color.yellow.opacity(0.4), lineWidth: 1)
+            .foregroundStyle(Color.yellow.opacity(0.10))
 
             // Fixed POIs
             ForEach(payload.pois) { poi in
