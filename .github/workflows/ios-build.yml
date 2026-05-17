@@ -1,0 +1,101 @@
+name: Build iOS App
+
+on:
+  push:
+    branches:
+      - claude/virtual-human-marketing-BlUij
+      - main
+    paths:
+      - 'experiments/virtual-human-ios/**'
+      - 'experiments/virtual-human/**'
+      - '.github/workflows/ios-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Xcode build for iOS Simulator
+    runs-on: macos-14
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+          xcode-select -p
+          python3 --version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Regenerate schedules JSON
+        working-directory: experiments/virtual-human-ios
+        run: ./generate-schedules.sh
+
+      - name: Generate Xcode project
+        working-directory: experiments/virtual-human-ios
+        run: |
+          xcodegen generate
+          ls -la VirtualHumanMonitor.xcodeproj
+
+      - name: List schemes
+        working-directory: experiments/virtual-human-ios
+        run: xcodebuild -list -project VirtualHumanMonitor.xcodeproj
+
+      - name: Build for iOS Simulator
+        working-directory: experiments/virtual-human-ios
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project VirtualHumanMonitor.xcodeproj \
+            -scheme VirtualHumanMonitor \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ./DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            2>&1 | tee build.log
+
+      - name: Locate built .app
+        id: locate
+        working-directory: experiments/virtual-human-ios
+        run: |
+          APP_PATH=$(find DerivedData/Build/Products -maxdepth 3 -name "*.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::No .app produced"
+            exit 1
+          fi
+          echo "Found: $APP_PATH"
+          ls -la "$APP_PATH"
+          echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
+          echo "app_name=$(basename "$APP_PATH" .app)" >> "$GITHUB_OUTPUT"
+
+      - name: Package .app as zip
+        working-directory: experiments/virtual-human-ios
+        run: |
+          APP_PATH="${{ steps.locate.outputs.app_path }}"
+          ZIP_NAME="VirtualHumanMonitor-iOSSimulator.zip"
+          (cd "$(dirname "$APP_PATH")" && zip -ry "$OLDPWD/$ZIP_NAME" "$(basename "$APP_PATH")")
+          ls -lh "$ZIP_NAME"
+
+      - name: Upload .app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VirtualHumanMonitor-iOSSimulator
+          path: experiments/virtual-human-ios/VirtualHumanMonitor-iOSSimulator.zip
+          if-no-files-found: error
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: experiments/virtual-human-ios/build.log
+          if-no-files-found: ignore
