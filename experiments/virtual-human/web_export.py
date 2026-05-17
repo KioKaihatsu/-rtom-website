@@ -149,6 +149,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <title>霜降銀座コホート リアルタイム監視 — {date} ({weekday})</title>
+<!-- PWA / iOS Add-to-Home-Screen -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="霜降銀座監視">
+<meta name="theme-color" content="#0f1419">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
   :root {{
@@ -159,7 +168,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   }}
   *{{box-sizing:border-box}}
   html,body{{margin:0;height:100%;background:var(--bg);color:var(--text);
-    font:13px/1.45 -apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Yu Gothic UI",sans-serif}}
+    font:13px/1.45 -apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Yu Gothic UI",sans-serif;
+    -webkit-touch-callout:none;-webkit-user-select:none;overflow:hidden}}
+  /* iPhone: stack the map and side panel */
+  @media (max-width: 768px) {{
+    #app{{grid-template-columns: 1fr !important; grid-template-rows: 1fr 56vh}}
+    #map{{height: 100% !important}}
+    #side{{border-left:0 !important; border-top:1px solid var(--line)}}
+  }}
+  /* iOS standalone (Add to Home Screen) safe areas */
+  @supports (padding: env(safe-area-inset-top)) {{
+    body{{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}}
+  }}
   #app{{display:grid;grid-template-columns:1fr 400px;height:100vh}}
   #map{{height:100%;background:#1f2530}}
   #side{{background:var(--panel);overflow-y:auto;border-left:1px solid var(--line)}}
