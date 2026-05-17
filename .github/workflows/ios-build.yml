@@ -81,17 +81,24 @@ jobs:
           rc=${PIPESTATUS[0]}
           echo "xcodebuild exit code: $rc"
           if [ $rc -ne 0 ]; then
+            # Emit each significant error/warning line as a public ::error:: annotation
+            grep -E "(error:|fatal error|cannot find|undeclared|Use of undeclared|expected|extraneous|missing|argument labels|incorrect argument|** BUILD FAILED)" build.log \
+              | head -15 \
+              | awk '{
+                  gsub(/%/, "%25");
+                  gsub(/\r/, "");
+                  gsub(/\n/, "%0A");
+                  gsub(/::/, "%3A%3A");
+                  print "::error::" $0
+                }'
+            # Also write to step summary
             {
               echo "## ❌ xcodebuild failed (exit $rc)"
               echo ""
-              echo "### First errors/warnings"
               echo '```'
-              grep -E "(error:|warning:|fatal error|note:|❌|** BUILD FAILED|The following build commands failed|Undefined symbol)" build.log | head -60 || true
-              echo '```'
-              echo ""
-              echo "### Last 80 lines of log"
-              echo '```'
-              tail -80 build.log
+              grep -E "(error:|fatal error|cannot find|undeclared|** BUILD FAILED|The following build commands failed|Undefined symbol)" build.log | head -50
+              echo "..."
+              tail -100 build.log
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             exit $rc
