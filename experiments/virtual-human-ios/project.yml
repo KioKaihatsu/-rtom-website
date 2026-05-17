@@ -43,3 +43,20 @@ targets:
         INFOPLIST_FILE: Resources/Info.plist
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+
+schemes:
+  VirtualHumanMonitor:
+    build:
+      targets:
+        VirtualHumanMonitor: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release

@@ -18,7 +18,12 @@ jobs:
   build:
     name: Xcode build for iOS Simulator
     runs-on: macos-14
-    timeout-minutes: 25
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: experiments/virtual-human-ios
 
     steps:
       - name: Checkout
@@ -26,60 +31,72 @@ jobs:
 
       - name: Show toolchain
         run: |
+          set -e
           sw_vers
           xcodebuild -version
           xcode-select -p
           python3 --version
+          which xcrun
 
       - name: Install XcodeGen
         run: brew install xcodegen
 
       - name: Regenerate schedules JSON
-        working-directory: experiments/virtual-human-ios
-        run: ./generate-schedules.sh
+        run: |
+          set -e
+          ./generate-schedules.sh
+          ls -lh Resources/schedules.json
 
       - name: Generate Xcode project
-        working-directory: experiments/virtual-human-ios
         run: |
-          xcodegen generate
+          set -e
+          xcodegen generate --spec project.yml
           ls -la VirtualHumanMonitor.xcodeproj
+          ls -la VirtualHumanMonitor.xcodeproj/xcshareddata/xcschemes/ || true
 
-      - name: List schemes
-        working-directory: experiments/virtual-human-ios
-        run: xcodebuild -list -project VirtualHumanMonitor.xcodeproj
+      - name: Show schemes & targets
+        run: |
+          xcodebuild -list -project VirtualHumanMonitor.xcodeproj
+
+      - name: Show available iOS simulators
+        run: |
+          xcrun simctl list devices ios available | head -40
 
       - name: Build for iOS Simulator
-        working-directory: experiments/virtual-human-ios
         run: |
           set -o pipefail
-          xcodebuild build \
+          xcodebuild \
             -project VirtualHumanMonitor.xcodeproj \
             -scheme VirtualHumanMonitor \
             -configuration Debug \
+            -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath ./DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            2>&1 | tee build.log
+            ONLY_ACTIVE_ARCH=NO \
+            build 2>&1 | tee build.log
 
       - name: Locate built .app
         id: locate
-        working-directory: experiments/virtual-human-ios
         run: |
+          set -e
           APP_PATH=$(find DerivedData/Build/Products -maxdepth 3 -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
             echo "::error::No .app produced"
+            find DerivedData -type d -name "*.app" 2>/dev/null || true
             exit 1
           fi
           echo "Found: $APP_PATH"
           ls -la "$APP_PATH"
+          # Verify schedules.json is in bundle
+          ls -la "$APP_PATH/schedules.json" || echo "::warning::schedules.json missing from app bundle"
           echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
-          echo "app_name=$(basename "$APP_PATH" .app)" >> "$GITHUB_OUTPUT"
 
       - name: Package .app as zip
-        working-directory: experiments/virtual-human-ios
         run: |
+          set -e
           APP_PATH="${{ steps.locate.outputs.app_path }}"
           ZIP_NAME="VirtualHumanMonitor-iOSSimulator.zip"
           (cd "$(dirname "$APP_PATH")" && zip -ry "$OLDPWD/$ZIP_NAME" "$(basename "$APP_PATH")")
@@ -91,6 +108,7 @@ jobs:
           name: VirtualHumanMonitor-iOSSimulator
           path: experiments/virtual-human-ios/VirtualHumanMonitor-iOSSimulator.zip
           if-no-files-found: error
+          retention-days: 14
 
       - name: Upload build log on failure
         if: failure()

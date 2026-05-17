@@ -27,7 +27,7 @@ struct MapView: View {
             ForEach(payload.pois) { poi in
                 Annotation(poi.name, coordinate: poi.coordinate, anchor: .center) {
                     POIDot(poi: poi)
-                } .annotationTitles(.hidden)
+                }
             }
 
             // Persona trails + markers
