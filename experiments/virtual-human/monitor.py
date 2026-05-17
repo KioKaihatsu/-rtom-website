@@ -11,7 +11,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from web_export import build_payload, render_html, MODE_LABEL
+from web_export import build_payload, build_dual_payload, render_html, MODE_LABEL
 
 
 CSI = "\033["
@@ -130,6 +130,8 @@ def main() -> None:
                     help="CLI 出力をスキップ")
     ap.add_argument("--at", default=None,
                     help="表示時刻を指定 (HH:MM) — デバッグ用")
+    ap.add_argument("--ios-json", type=Path, default=None,
+                    help="iOSアプリ用に平日/週末両方を含む JSON を出力")
     args = ap.parse_args()
 
     jst = ZoneInfo("Asia/Tokyo")
@@ -151,6 +153,15 @@ def main() -> None:
         render_html(payload, args.html)
         print(f"\n{DIM}🗺  HTML monitor: {args.html}{RESET}")
         print(f"{DIM}    open: file://{args.html.resolve()}{RESET}")
+
+    if args.ios_json:
+        args.ios_json.parent.mkdir(parents=True, exist_ok=True)
+        dual = build_dual_payload()
+        args.ios_json.write_text(
+            json.dumps(dual, ensure_ascii=False, indent=2, separators=(",", ":")),
+            encoding="utf-8",
+        )
+        print(f"{DIM}📱 iOS schedules JSON: {args.ios_json}{RESET}")
 
 
 if __name__ == "__main__":

@@ -88,6 +88,62 @@ def build_payload(target_date: date_t) -> dict[str, Any]:
     }
 
 
+def build_dual_payload() -> dict[str, Any]:
+    """Build a payload with both weekday and weekend schedules embedded.
+
+    Used by the iOS app so it can pick the correct schedule at runtime
+    based on the visitor's current Tokyo day-of-week.
+    """
+    cohort = build_cohort()
+    weekday_date = date_t(2026, 5, 18)  # Monday
+    weekend_date = date_t(2026, 5, 17)  # Sunday
+
+    personas_out = []
+    for idx, persona in enumerate(cohort):
+        t = persona.traits
+        home = (t.home.lat, t.home.lng)
+        wp = WORKPLACES.get(t.workplace_id) if t.workplace_id else None
+        personas_out.append({
+            "id": idx + 1,
+            "name": t.name,
+            "color": PALETTE[idx % len(PALETTE)],
+            "age": t.age,
+            "gender": t.gender,
+            "occupation": t.occupation,
+            "income_jpy_year": t.income_jpy_year,
+            "hourly_wage_jpy": t.hourly_wage_jpy,
+            "home_name": t.home.name,
+            "home_lat": t.home.lat,
+            "home_lng": t.home.lng,
+            "km_from_shimofuri": round(t.home.km_from_shimofuri(), 2),
+            "workplace": (
+                {"id": wp.id, "name": wp.name, "lat": wp.lat, "lng": wp.lng}
+                if wp else None
+            ),
+            "initial_balance_jpy": persona.state.wallet_jpy,
+            "schedule_weekday": [
+                segment_to_dict(s)
+                for s in schedule_for(t.name, home, weekday_date)
+            ],
+            "schedule_weekend": [
+                segment_to_dict(s)
+                for s in schedule_for(t.name, home, weekend_date)
+            ],
+        })
+
+    return {
+        "origin": {"lat": SHIMOFURI_GINZA.lat, "lng": SHIMOFURI_GINZA.lng},
+        "rio": {"lat": RIO.lat, "lng": RIO.lng},
+        "pois": [
+            {"id": p.id, "name": p.name, "lat": p.lat,
+             "lng": p.lng, "kind": p.kind}
+            for p in all_places()
+        ],
+        "mode_label": MODE_LABEL,
+        "personas": personas_out,
+    }
+
+
 HTML_TEMPLATE = """<!DOCTYPE html>
 <html lang="ja">
 <head>
