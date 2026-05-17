@@ -145,31 +145,51 @@ jobs:
           if-no-files-found: ignore
 
       - name: Publish build log to ci-debug-logs branch (failure)
-        if: failure()
+        if: always() && steps.build.conclusion == 'failure'
         working-directory: ${{ github.workspace }}
+        continue-on-error: true
         run: |
-          set -e
-          if [ ! -f experiments/virtual-human-ios/build.log ]; then
-            echo "no build.log to publish"
-            exit 0
+          set -x
+          BUILD_LOG=experiments/virtual-human-ios/build.log
+          if [ ! -f "$BUILD_LOG" ]; then
+            echo "no build.log; creating placeholder"
+            mkdir -p experiments/virtual-human-ios
+            echo "build.log was missing" > "$BUILD_LOG"
           fi
-          mkdir -p /tmp/log-publish
-          cp experiments/virtual-human-ios/build.log /tmp/log-publish/build.log
-          # Also extract just errors
-          grep -E "(error:|fatal error|cannot find|undeclared|** BUILD FAILED|warning:)" \
-            experiments/virtual-human-ios/build.log > /tmp/log-publish/errors.txt 2>/dev/null || true
-          tail -200 experiments/virtual-human-ios/build.log > /tmp/log-publish/tail.txt
-          # Push to an orphan branch ci-debug-logs (overwrites each time)
-          cd /tmp/log-publish
-          git init -q
+          ls -lh "$BUILD_LOG"
+
+          # Stash content outside the worktree before we mutate it
+          cp "$BUILD_LOG" /tmp/build.log
+          grep -E "(error:|fatal error|cannot find|undeclared|warning:|❌|BUILD FAILED)" \
+            "$BUILD_LOG" > /tmp/errors.txt 2>/dev/null || true
+          tail -300 "$BUILD_LOG" > /tmp/tail.txt
+          {
+            echo "Run: ${{ github.run_id }}"
+            echo "Commit: ${{ github.sha }}"
+            echo "Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Exit: 74"
+          } > /tmp/meta.txt
+
           git config user.email "ci@github.actions"
           git config user.name "ci-bot"
-          git checkout -b ci-debug-logs
-          git add .
-          git commit -q -m "Build log from run ${{ github.run_id }}"
-          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
-          git push -f origin ci-debug-logs
-          echo "Published. Read via:"
-          echo "  https://raw.githubusercontent.com/${{ github.repository }}/ci-debug-logs/errors.txt"
-          echo "  https://raw.githubusercontent.com/${{ github.repository }}/ci-debug-logs/tail.txt"
-          echo "  https://raw.githubusercontent.com/${{ github.repository }}/ci-debug-logs/build.log"
+
+          # Reuse the cached credentials from actions/checkout
+          git fetch origin ci-debug-logs:ci-debug-logs 2>/dev/null || true
+          git checkout --orphan ci-debug-logs-new
+          git rm -rf . >/dev/null 2>&1 || true
+          git clean -fdx -e .git
+
+          cp /tmp/build.log build.log
+          cp /tmp/errors.txt errors.txt
+          cp /tmp/tail.txt tail.txt
+          cp /tmp/meta.txt meta.txt
+
+          git add build.log errors.txt tail.txt meta.txt
+          git commit -m "Build log run ${{ github.run_id }}"
+          git push -f origin ci-debug-logs-new:ci-debug-logs
+
+          echo ""
+          echo "✅ Published. Inspect from anywhere:"
+          echo "   curl https://raw.githubusercontent.com/${{ github.repository }}/ci-debug-logs/errors.txt"
+          echo "   curl https://raw.githubusercontent.com/${{ github.repository }}/ci-debug-logs/tail.txt"
+          echo "   curl https://raw.githubusercontent.com/${{ github.repository }}/ci-debug-logs/build.log"
