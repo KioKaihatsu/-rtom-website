@@ -56,7 +56,18 @@ jobs:
 
       - name: Show schemes & targets
         run: |
-          xcodebuild -list -project VirtualHumanMonitor.xcodeproj
+          set +e
+          xcodebuild -list -project VirtualHumanMonitor.xcodeproj 2>&1 | tee /tmp/list.log
+          rc=${PIPESTATUS[0]}
+          echo "xcodebuild -list exit: $rc"
+          if [ $rc -ne 0 ]; then
+            echo "::error::xcodebuild -list failed with exit $rc"
+            head -20 /tmp/list.log | while IFS= read -r line; do
+              clean=$(echo "$line" | tr -d '\r' | sed -e 's/%/%25/g' -e 's/::/%3A%3A/g' | head -c 200)
+              echo "::warning::list: ${clean}"
+            done
+          fi
+          exit 0   # continue regardless
 
       - name: Show available iOS simulators
         run: |
@@ -194,29 +205,39 @@ jobs:
           if-no-files-found: ignore
 
       - name: Publish build log to ci-debug-logs branch (failure)
-        if: always() && steps.build.conclusion == 'failure'
+        if: failure() || cancelled()
         working-directory: ${{ github.workspace }}
         continue-on-error: true
         run: |
           set -x
           BUILD_LOG=experiments/virtual-human-ios/build.log
           if [ ! -f "$BUILD_LOG" ]; then
-            echo "no build.log; creating placeholder"
+            echo "no build.log; using whatever we have"
             mkdir -p experiments/virtual-human-ios
-            echo "build.log was missing" > "$BUILD_LOG"
+            : > "$BUILD_LOG"
           fi
-          ls -lh "$BUILD_LOG"
+          # Include earlier step logs (xcodebuild -list output if it failed)
+          [ -f /tmp/list.log ] && {
+            echo "===== xcodebuild -list output ====="
+            cat /tmp/list.log
+            echo ""
+          } >> "$BUILD_LOG.combined" || true
+          {
+            echo "===== xcodebuild build output ====="
+            cat "$BUILD_LOG"
+          } >> "$BUILD_LOG.combined"
+
+          ls -lh "$BUILD_LOG" "$BUILD_LOG.combined" /tmp/list.log 2>/dev/null || true
 
           # Stash content outside the worktree before we mutate it
-          cp "$BUILD_LOG" /tmp/build.log
-          grep -E "(error:|fatal error|cannot find|undeclared|warning:|❌|BUILD FAILED)" \
-            "$BUILD_LOG" > /tmp/errors.txt 2>/dev/null || true
-          tail -300 "$BUILD_LOG" > /tmp/tail.txt
+          cp "$BUILD_LOG.combined" /tmp/build.log
+          grep -E "(error:|fatal error|cannot find|undeclared|warning:|❌|BUILD FAILED|missing)" \
+            "$BUILD_LOG.combined" > /tmp/errors.txt 2>/dev/null || true
+          tail -300 "$BUILD_LOG.combined" > /tmp/tail.txt
           {
             echo "Run: ${{ github.run_id }}"
             echo "Commit: ${{ github.sha }}"
             echo "Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "Exit: 74"
           } > /tmp/meta.txt
 
           git config user.email "ci@github.actions"
