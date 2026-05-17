@@ -1,0 +1,14 @@
+===== xcodebuild -list output =====
+Command line invocation:
+    /Applications/Xcode_15.4.app/Contents/Developer/usr/bin/xcodebuild -list -project VirtualHumanMonitor.xcodeproj
+
+User defaults from command line:
+    IDEPackageSupportUseBuiltinSCM = YES
+
+2026-05-17 04:21:06.024 xcodebuild[33148:82448] Writing error result bundle to /var/folders/k4/_09nqs851t35bpkk8lr_p43c0000gn/T/ResultBundle_2026-17-05_04-21-0006.xcresult
+xcodebuild: error: Unable to read project 'VirtualHumanMonitor.xcodeproj'.
+	Reason: The project ‘VirtualHumanMonitor’ cannot be opened because it is in a future Xcode project file format (77). Adjust the project format using a compatible version of Xcode to allow it to be opened by this version of Xcode.
+
+
+
+===== xcodebuild build output =====
