@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>霜降銀座コホート リアルタイム監視 — 2026-05-17 (日)</title>
+<!-- PWA / iOS Add-to-Home-Screen -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="霜降銀座監視">
+<meta name="theme-color" content="#0f1419">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  :root {
+    --bg:#0f1419; --panel:#1a1f2a; --line:#2a3142;
+    --text:#e4e7eb; --dim:#8a93a3;
+    --accent:#f6c350; --rio:#ffb84d;
+    --green:#5dd39e; --red:#ef6f6c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+    font:13px/1.45 -apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Yu Gothic UI",sans-serif;
+    -webkit-touch-callout:none;-webkit-user-select:none;overflow:hidden}
+  /* iPhone: stack the map and side panel */
+  @media (max-width: 768px) {
+    #app{grid-template-columns: 1fr !important; grid-template-rows: 1fr 56vh}
+    #map{height: 100% !important}
+    #side{border-left:0 !important; border-top:1px solid var(--line)}
+  }
+  /* iOS standalone (Add to Home Screen) safe areas */
+  @supports (padding: env(safe-area-inset-top)) {
+    body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+  }
+  #app{display:grid;grid-template-columns:1fr 400px;height:100vh}
+  #map{height:100%;background:#1f2530}
+  #side{background:var(--panel);overflow-y:auto;border-left:1px solid var(--line)}
+  header{padding:14px 16px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:var(--panel);z-index:5}
+  header h1{margin:0 0 4px;font-size:14px;font-weight:700;letter-spacing:.04em}
+  header .clock{font:700 22px ui-monospace,monospace;color:var(--accent);margin:6px 0}
+  header .sub{color:var(--dim);font-size:11px}
+  header .scrub{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11px;color:var(--dim)}
+  header .scrub input{flex:1;accent-color:var(--accent)}
+  header button{background:var(--accent);color:#1a1207;border:0;padding:3px 10px;
+    border-radius:5px;font-weight:700;cursor:pointer;font-size:11px}
+  header button.live{background:var(--green);color:#06281a}
+  .totals{padding:12px 16px;border-bottom:1px solid var(--line);
+    display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px}
+  .totals div b{color:var(--accent);font:700 14px ui-monospace,monospace}
+  .totals span{color:var(--dim);display:block;font-size:10px}
+  .person{border-bottom:1px solid var(--line);padding:10px 14px;
+    display:grid;grid-template-columns:14px 1fr;gap:10px;align-items:start}
+  .person .dot{width:12px;height:12px;border-radius:50%;margin-top:4px;
+    border:2px solid rgba(255,255,255,.2);position:relative}
+  .person .dot.moving::after{content:'';position:absolute;inset:-4px;
+    border-radius:50%;border:1.5px solid currentColor;opacity:.6;
+    animation:pulse 1.4s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.7);opacity:.7}100%{transform:scale(1.6);opacity:0}}
+  .person.sleeping{opacity:.55}
+  .person .name{font-weight:700;font-size:12px}
+  .person .age{color:var(--dim);font-weight:400}
+  .person .occ{color:var(--dim);font-size:10px;margin-bottom:4px}
+  .person .activity{color:var(--accent);font-size:12px;font-weight:700;margin-bottom:2px}
+  .person .place{color:var(--text);font-size:10px;margin-bottom:2px}
+  .person .mode{color:var(--dim);font-size:10px;margin-bottom:4px}
+  .person.visiting-shotengai{background:rgba(246,195,80,.08)}
+  .person.visiting-rio{background:rgba(255,184,77,.18)}
+  .person.working{border-left:3px solid var(--green);padding-left:11px}
+  .person.commuting{border-left:3px solid #3498db;padding-left:11px}
+  .person .row{display:flex;justify-content:space-between;
+    font-size:11px;color:var(--dim);line-height:1.5}
+  .person .row b{color:var(--text);font:600 11px ui-monospace,monospace}
+  .legend{padding:10px 16px;border-bottom:1px solid var(--line);
+    font-size:10px;color:var(--dim);line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <aside id="side">
+    <header>
+      <h1>霜降銀座コホート 監視ステーション</h1>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="sub" id="dateLine">2026-05-17 (日) JST / N=12</div>
+      <div class="scrub">
+        <span>過去を見る</span>
+        <input type="range" id="scrub" min="0" max="1440" step="1" value="0"/>
+        <button class="live" id="liveBtn">LIVE</button>
+      </div>
+    </header>
+    <div class="totals" id="totals"></div>
+    <div class="legend">
+      ● 仮想人格12名の今この瞬間の位置・行動・収支を、実線路（山手線/京浜東北/田園都市/三田/南北 等）と
+      徒歩・電車・バス・車で表示。霜降銀座来訪中は背景ハイライト、
+      <b style="color:var(--rio)">★</b> = Riverbed in Otherworld 来店中。
+      勤務中=緑バー / 移動中=青バー。
+    </div>
+    <div id="personList"></div>
+  </aside>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const DATA = {"date": "2026-05-17", "weekday_jp": "日", "origin": {"lat": 35.7414, "lng": 139.7448}, "rio": {"lat": 35.7418, "lng": 139.7445}, "pois": [{"id": "shimofuri_ginza", "name": "霜降銀座商店街", "lat": 35.7414, "lng": 139.7448, "kind": "shotengai"}, {"id": "rio", "name": "Riverbed in Otherworld", "lat": 35.7418, "lng": 139.7445, "kind": "rio"}, {"id": "komagome_st", "name": "JR駒込駅", "lat": 35.7367, "lng": 139.7475, "kind": "station"}, {"id": "bank_otemachi", "name": "メガバンク本店 (大手町)", "lat": 35.6852, "lng": 139.766, "kind": "workplace"}, {"id": "komagome_hospital", "name": "都立駒込病院", "lat": 35.7367, "lng": 139.7472, "kind": "hospital"}, {"id": "ikebukuro_salon", "name": "美容室 (池袋)", "lat": 35.732, "lng": 139.7155, "kind": "workplace"}, {"id": "oyama_izakaya", "name": "中村屋 (大山駅前)", "lat": 35.7505, "lng": 139.6997, "kind": "restaurant"}, {"id": "waseda_univ", "name": "早稲田大学", "lat": 35.7062, "lng": 139.7195, "kind": "school"}, {"id": "shibuya_agency", "name": "広告代理店 (渋谷)", "lat": 35.6594, "lng": 139.7005, "kind": "workplace"}, {"id": "kita_kuyakusho", "name": "北区役所", "lat": 35.7528, "lng": 139.734, "kind": "workplace"}, {"id": "kawaguchi_factory", "name": "自動車部品工場 (川口)", "lat": 35.812, "lng": 139.7155, "kind": "workplace"}], "mode_label": {"stay": "滞在中", "walk": "🚶 徒歩", "train": "🚃 電車", "bus": "🚌 バス", "car": "🚗 車"}, "personas": [{"id": 1, "name": "田中 浩二", "color": "#e74c3c", "age": 45, "gender": "male", "occupation": "銀行員（支店長代理）", "income_jpy_year": 8500000, "hourly_wage_jpy": 4087, "home_name": "駒込 1丁目", "home_lat": 35.7388, "home_lng": 139.7475, "km_from_shimofuri": 0.38, "workplace": {"id": "bank_otemachi", "name": "メガバンク本店 (大手町)", "lat": 35.6852, "lng": 139.766}, "initial_balance_jpy": 60000, "segments": [{"s": 0, "e": 450, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 450, "e": 510, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 510, "e": 600, "act": "family_time", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 600, "e": 608, "act": "walk", "mode": "walk", "place": "→霜降銀座", "wp": [[35.7388, 139.7475], [35.7367, 139.7475], [35.7414, 139.7448]], "cost": 0, "wage": 0, "tp": null}, {"s": 608, "e": 660, "act": "shimofuri_grocery", "mode": "stay", "place": "霜降銀座商店街", "wp": [[35.7414, 139.7448]], "cost": 1600, "wage": 0, "tp": {"channel": "霜降銀座", "brand": null}}, {"s": 660, "e": 670, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7414, 139.7448], [35.7367, 139.7475], [35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 670, "e": 780, "act": "lunch_home", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 1020, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 1020, "e": 1032, "act": "walk", "mode": "walk", "place": "→Riverbed", "wp": [[35.7388, 139.7475], [35.7367, 139.7475], [35.7418, 139.7445]], "cost": 0, "wage": 0, "tp": null}, {"s": 1032, "e": 1140, "act": "shimofuri_dining", "mode": "stay", "place": "Riverbed in Otherworld", "wp": [[35.7418, 139.7445]], "cost": 3500, "wage": 0, "tp": {"channel": "霜降銀座", "brand": "Riverbed in Otherworld"}}, {"s": 1140, "e": 1148, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7418, 139.7445], [35.7367, 139.7475], [35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 1148, "e": 1350, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 1350, "e": 1410, "act": "wind_down", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 1410, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7388, 139.7475]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 2, "name": "山本 結衣", "color": "#3498db", "age": 32, "gender": "female", "occupation": "看護師（夜勤あり）", "income_jpy_year": 4800000, "hourly_wage_jpy": 2308, "home_name": "巣鴨 4丁目", "home_lat": 35.7332, "home_lng": 139.739, "km_from_shimofuri": 1.05, "workplace": {"id": "komagome_hospital", "name": "都立駒込病院", "lat": 35.7367, "lng": 139.7472}, "initial_balance_jpy": 40000, "segments": [{"s": 0, "e": 510, "act": "night_shift", "mode": "stay", "place": "都立駒込病院 病棟", "wp": [[35.7367, 139.7472]], "cost": 0, "wage": 15000, "tp": null}, {"s": 510, "e": 522, "act": "walk", "mode": "walk", "place": "→駒込駅", "wp": [[35.7367, 139.7472], [35.7367, 139.7475]], "cost": 0, "wage": 0, "tp": null}, {"s": 522, "e": 526, "act": "train", "mode": "train", "place": "山手線 駒込→巣鴨", "wp": [[35.7367, 139.7475], [35.7332, 139.739]], "cost": 140, "wage": 0, "tp": null}, {"s": 526, "e": 535, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7332, 139.739], [35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}, {"s": 535, "e": 570, "act": "breakfast_home", "mode": "stay", "place": "自宅", "wp": [[35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}, {"s": 570, "e": 960, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}, {"s": 960, "e": 1050, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}, {"s": 1050, "e": 1060, "act": "walk", "mode": "walk", "place": "→霜降銀座", "wp": [[35.7332, 139.739], [35.7332, 139.739], [35.7414, 139.7448]], "cost": 0, "wage": 0, "tp": null}, {"s": 1060, "e": 1110, "act": "shimofuri_dining", "mode": "stay", "place": "Riverbed in Otherworld", "wp": [[35.7418, 139.7445]], "cost": 2800, "wage": 0, "tp": {"channel": "霜降銀座", "brand": "Riverbed in Otherworld"}}, {"s": 1110, "e": 1120, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7418, 139.7445], [35.7332, 139.739], [35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}, {"s": 1120, "e": 1290, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}, {"s": 1290, "e": 1380, "act": "wind_down", "mode": "stay", "place": "自宅", "wp": [[35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}, {"s": 1380, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7332, 139.739]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 3, "name": "小林 章", "color": "#2ecc71", "age": 68, "gender": "male", "occupation": "退職（元 商社）", "income_jpy_year": 2800000, "hourly_wage_jpy": 1346, "home_name": "田端 3丁目", "home_lat": 35.7385, "home_lng": 139.761, "km_from_shimofuri": 1.49, "workplace": null, "initial_balance_jpy": 50000, "segments": [{"s": 0, "e": 390, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 390, "e": 480, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 480, "e": 495, "act": "walk", "mode": "walk", "place": "→霜降銀座 朝散歩", "wp": [[35.7385, 139.761], [35.7378, 139.761], [35.7414, 139.7448]], "cost": 0, "wage": 0, "tp": null}, {"s": 495, "e": 555, "act": "shimofuri_stroll", "mode": "stay", "place": "霜降銀座商店街", "wp": [[35.7414, 139.7448]], "cost": 0, "wage": 0, "tp": {"channel": "霜降銀座", "brand": null}}, {"s": 555, "e": 570, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7414, 139.7448], [35.7378, 139.761], [35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 570, "e": 720, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 720, "e": 780, "act": "lunch_home", "mode": "stay", "place": "自宅", "wp": [[35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 1020, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 1020, "e": 1035, "act": "walk", "mode": "walk", "place": "→Riverbed", "wp": [[35.7385, 139.761], [35.7378, 139.761], [35.7418, 139.7445]], "cost": 0, "wage": 0, "tp": null}, {"s": 1035, "e": 1125, "act": "shimofuri_dining", "mode": "stay", "place": "Riverbed in Otherworld", "wp": [[35.7418, 139.7445]], "cost": 3200, "wage": 0, "tp": {"channel": "霜降銀座", "brand": "Riverbed in Otherworld"}}, {"s": 1125, "e": 1140, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7418, 139.7445], [35.7378, 139.761], [35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 1140, "e": 1320, "act": "tv_time", "mode": "stay", "place": "自宅", "wp": [[35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}, {"s": 1320, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7385, 139.761]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 4, "name": "鈴木 芽依", "color": "#f39c12", "age": 24, "gender": "female", "occupation": "美容師（アシスタント）", "income_jpy_year": 2800000, "hourly_wage_jpy": 1346, "home_name": "池袋 2丁目", "home_lat": 35.7295, "home_lng": 139.709, "km_from_shimofuri": 3.49, "workplace": {"id": "ikebukuro_salon", "name": "美容室 (池袋)", "lat": 35.732, "lng": 139.7155}, "initial_balance_jpy": 18000, "segments": [{"s": 0, "e": 480, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7295, 139.709]], "cost": 0, "wage": 0, "tp": null}, {"s": 480, "e": 540, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.7295, 139.709]], "cost": 0, "wage": 0, "tp": null}, {"s": 540, "e": 555, "act": "walk", "mode": "walk", "place": "→美容室", "wp": [[35.7295, 139.709], [35.732, 139.7155]], "cost": 0, "wage": 0, "tp": null}, {"s": 555, "e": 780, "act": "work", "mode": "stay", "place": "美容室 池袋", "wp": [[35.732, 139.7155]], "cost": 0, "wage": 5400, "tp": null}, {"s": 780, "e": 840, "act": "lunch_konbini", "mode": "stay", "place": "池袋コンビニ", "wp": [[35.732, 139.716]], "cost": 650, "wage": 0, "tp": null}, {"s": 840, "e": 1140, "act": "work", "mode": "stay", "place": "美容室 池袋", "wp": [[35.732, 139.7155]], "cost": 0, "wage": 6750, "tp": null}, {"s": 1140, "e": 1155, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.732, 139.7155], [35.7295, 139.709]], "cost": 0, "wage": 0, "tp": null}, {"s": 1155, "e": 1230, "act": "dinner_home", "mode": "stay", "place": "自宅", "wp": [[35.7295, 139.709]], "cost": 0, "wage": 0, "tp": null}, {"s": 1230, "e": 1410, "act": "instagram_scroll", "mode": "stay", "place": "自宅", "wp": [[35.7295, 139.709]], "cost": 0, "wage": 0, "tp": {"channel": "Instagram", "brand": null}}, {"s": 1410, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7295, 139.709]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 5, "name": "渡辺 健", "color": "#9b59b6", "age": 38, "gender": "male", "occupation": "ソフトウェアエンジニア（フルリモート）", "income_jpy_year": 9500000, "hourly_wage_jpy": 4567, "home_name": "文京区 千石", "home_lat": 35.7283, "home_lng": 139.7398, "km_from_shimofuri": 1.52, "workplace": null, "initial_balance_jpy": 80000, "segments": [{"s": 0, "e": 510, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}, {"s": 510, "e": 600, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}, {"s": 600, "e": 720, "act": "hobby", "mode": "stay", "place": "自宅", "wp": [[35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}, {"s": 720, "e": 780, "act": "lunch_home", "mode": "stay", "place": "自宅", "wp": [[35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 1020, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}, {"s": 1020, "e": 1040, "act": "walk", "mode": "walk", "place": "→Riverbed", "wp": [[35.7283, 139.7398], [35.7283, 139.7398], [35.7414, 139.7448], [35.7418, 139.7445]], "cost": 0, "wage": 0, "tp": null}, {"s": 1040, "e": 1140, "act": "shimofuri_dining", "mode": "stay", "place": "Riverbed in Otherworld", "wp": [[35.7418, 139.7445]], "cost": 3500, "wage": 0, "tp": {"channel": "霜降銀座", "brand": "Riverbed in Otherworld"}}, {"s": 1140, "e": 1160, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7418, 139.7445], [35.7283, 139.7398], [35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}, {"s": 1160, "e": 1380, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}, {"s": 1380, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7283, 139.7398]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 6, "name": "伊藤 桜", "color": "#1abc9c", "age": 29, "gender": "female", "occupation": "フリーランス グラフィックデザイナー", "income_jpy_year": 4200000, "hourly_wage_jpy": 2019, "home_name": "北区 王子", "home_lat": 35.753, "home_lng": 139.7385, "km_from_shimofuri": 1.41, "workplace": null, "initial_balance_jpy": 32000, "segments": [{"s": 0, "e": 480, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}, {"s": 480, "e": 600, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}, {"s": 600, "e": 780, "act": "wfh_work", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 6300, "tp": null}, {"s": 780, "e": 840, "act": "lunch_home", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}, {"s": 840, "e": 855, "act": "walk", "mode": "walk", "place": "→霜降銀座カフェ", "wp": [[35.753, 139.7385], [35.7528, 139.734], [35.7414, 139.7448]], "cost": 0, "wage": 0, "tp": null}, {"s": 855, "e": 990, "act": "wfh_work", "mode": "stay", "place": "霜降銀座カフェ", "wp": [[35.7414, 139.7448]], "cost": 580, "wage": 4730, "tp": {"channel": "霜降銀座", "brand": null}}, {"s": 990, "e": 1005, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7414, 139.7448], [35.7528, 139.734], [35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}, {"s": 1005, "e": 1140, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}, {"s": 1140, "e": 1230, "act": "dinner_home", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}, {"s": 1230, "e": 1410, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}, {"s": 1410, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.7385]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 7, "name": "中村 大輔", "color": "#34495e", "age": 52, "gender": "male", "occupation": "居酒屋店主", "income_jpy_year": 5500000, "hourly_wage_jpy": 2644, "home_name": "板橋区 大山", "home_lat": 35.753, "home_lng": 139.697, "km_from_shimofuri": 4.49, "workplace": {"id": "oyama_izakaya", "name": "中村屋 (大山駅前)", "lat": 35.7505, "lng": 139.6997}, "initial_balance_jpy": 45000, "segments": [{"s": 0, "e": 60, "act": "shop_cleanup", "mode": "stay", "place": "中村屋 (大山)", "wp": [[35.7505, 139.6997]], "cost": 0, "wage": 0, "tp": null}, {"s": 60, "e": 70, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7505, 139.6997], [35.753, 139.697]], "cost": 0, "wage": 0, "tp": null}, {"s": 70, "e": 540, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.697]], "cost": 0, "wage": 0, "tp": null}, {"s": 540, "e": 660, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.697]], "cost": 0, "wage": 0, "tp": null}, {"s": 660, "e": 780, "act": "errands", "mode": "stay", "place": "自宅", "wp": [[35.753, 139.697]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 800, "act": "car", "mode": "car", "place": "→豊洲市場へ仕入れ", "wp": [[35.753, 139.697], [35.655, 139.79]], "cost": 0, "wage": 0, "tp": null}, {"s": 800, "e": 900, "act": "shopping_supply", "mode": "stay", "place": "豊洲市場", "wp": [[35.655, 139.79]], "cost": 24000, "wage": 0, "tp": null}, {"s": 900, "e": 930, "act": "car", "mode": "car", "place": "→中村屋", "wp": [[35.655, 139.79], [35.7505, 139.6997]], "cost": 0, "wage": 0, "tp": null}, {"s": 930, "e": 960, "act": "shop_prep", "mode": "stay", "place": "中村屋", "wp": [[35.7505, 139.6997]], "cost": 0, "wage": 0, "tp": null}, {"s": 960, "e": 1440, "act": "work_shop", "mode": "stay", "place": "中村屋 営業中", "wp": [[35.7505, 139.6997]], "cost": 0, "wage": 18000, "tp": null}]}, {"id": 8, "name": "高橋 葵", "color": "#e67e22", "age": 19, "gender": "female", "occupation": "大学生（早稲田）", "income_jpy_year": 1000000, "hourly_wage_jpy": 481, "home_name": "高田馬場", "home_lat": 35.7128, "home_lng": 139.7038, "km_from_shimofuri": 4.87, "workplace": {"id": "waseda_univ", "name": "早稲田大学", "lat": 35.7062, "lng": 139.7195}, "initial_balance_jpy": 12000, "segments": [{"s": 0, "e": 660, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7128, 139.7038]], "cost": 0, "wage": 0, "tp": null}, {"s": 660, "e": 720, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.7128, 139.7038]], "cost": 0, "wage": 0, "tp": null}, {"s": 720, "e": 780, "act": "lunch_home", "mode": "stay", "place": "自宅", "wp": [[35.7128, 139.7038]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 795, "act": "walk", "mode": "walk", "place": "→渋谷へ", "wp": [[35.7128, 139.7038], [35.7128, 139.7038]], "cost": 0, "wage": 0, "tp": null}, {"s": 795, "e": 815, "act": "train", "mode": "train", "place": "山手線 高田馬場→渋谷", "wp": [[35.7128, 139.7038], [35.7011, 139.7], [35.6896, 139.7006], [35.6831, 139.7022], [35.6702, 139.7027], [35.6594, 139.7005]], "cost": 170, "wage": 0, "tp": null}, {"s": 815, "e": 1020, "act": "shopping_apparel", "mode": "stay", "place": "渋谷", "wp": [[35.6594, 139.7005]], "cost": 4800, "wage": 0, "tp": {"channel": "店舗", "brand": "ZARA"}}, {"s": 1020, "e": 1045, "act": "train", "mode": "train", "place": "山手線 渋谷→高田馬場", "wp": [[35.6594, 139.7005], [35.6702, 139.7027], [35.6831, 139.7022], [35.6896, 139.7006], [35.7011, 139.7], [35.7128, 139.7038]], "cost": 170, "wage": 0, "tp": null}, {"s": 1045, "e": 1060, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7128, 139.7038], [35.7128, 139.7038]], "cost": 0, "wage": 0, "tp": null}, {"s": 1060, "e": 1200, "act": "instagram_scroll", "mode": "stay", "place": "自宅", "wp": [[35.7128, 139.7038]], "cost": 0, "wage": 0, "tp": {"channel": "TikTok", "brand": null}}, {"s": 1200, "e": 1260, "act": "dinner_home", "mode": "stay", "place": "自宅", "wp": [[35.7128, 139.7038]], "cost": 400, "wage": 0, "tp": null}, {"s": 1260, "e": 86400, "act": "study_night", "mode": "stay", "place": "自宅", "wp": [[35.7128, 139.7038]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 9, "name": "佐藤 美咲", "color": "#d35400", "age": 29, "gender": "female", "occupation": "広告代理店 アカウントプランナー", "income_jpy_year": 5200000, "hourly_wage_jpy": 2500, "home_name": "世田谷 三軒茶屋", "home_lat": 35.6438, "home_lng": 139.6705, "km_from_shimofuri": 12.73, "workplace": {"id": "shibuya_agency", "name": "広告代理店 (渋谷)", "lat": 35.6594, "lng": 139.7005}, "initial_balance_jpy": 55000, "segments": [{"s": 0, "e": 540, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": null}, {"s": 540, "e": 630, "act": "morning_routine", "mode": "stay", "place": "自宅", "wp": [[35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": null}, {"s": 630, "e": 720, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": null}, {"s": 720, "e": 780, "act": "lunch_home", "mode": "stay", "place": "自宅", "wp": [[35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 810, "act": "train", "mode": "train", "place": "田園都市線 三軒茶屋→渋谷", "wp": [[35.6438, 139.6705], [35.6519, 139.6826], [35.6594, 139.7005]], "cost": 170, "wage": 0, "tp": null}, {"s": 810, "e": 1080, "act": "shopping_apparel", "mode": "stay", "place": "渋谷", "wp": [[35.6594, 139.7005]], "cost": 12500, "wage": 0, "tp": {"channel": "店舗", "brand": "ZARA"}}, {"s": 1080, "e": 1110, "act": "train", "mode": "train", "place": "田園都市線 渋谷→三軒茶屋", "wp": [[35.6594, 139.7005], [35.6519, 139.6826], [35.6438, 139.6705]], "cost": 170, "wage": 0, "tp": null}, {"s": 1110, "e": 1120, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.6438, 139.6705], [35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": null}, {"s": 1120, "e": 1200, "act": "dinner_home", "mode": "stay", "place": "自宅", "wp": [[35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": null}, {"s": 1200, "e": 1410, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": {"channel": "Instagram", "brand": null}}, {"s": 1410, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.6438, 139.6705]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 10, "name": "林 涼", "color": "#8e44ad", "age": 35, "gender": "male", "occupation": "区役所職員", "income_jpy_year": 5800000, "hourly_wage_jpy": 2788, "home_name": "北区 赤羽", "home_lat": 35.778, "home_lng": 139.7205, "km_from_shimofuri": 4.61, "workplace": {"id": "kita_kuyakusho", "name": "北区役所", "lat": 35.7528, "lng": 139.734}, "initial_balance_jpy": 42000, "segments": [{"s": 0, "e": 450, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 450, "e": 540, "act": "morning_routine_w_baby", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 540, "e": 660, "act": "childcare", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 660, "e": 670, "act": "walk", "mode": "walk", "place": "→赤羽スーパー", "wp": [[35.778, 139.7205], [35.7785, 139.7212]], "cost": 0, "wage": 0, "tp": null}, {"s": 670, "e": 720, "act": "grocery", "mode": "stay", "place": "赤羽スーパー", "wp": [[35.7785, 139.7212]], "cost": 2400, "wage": 0, "tp": {"channel": "店舗", "brand": null}}, {"s": 720, "e": 730, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7785, 139.7212], [35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 730, "e": 780, "act": "lunch_home", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 1050, "act": "childcare", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 1050, "e": 1140, "act": "dinner_home", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 1140, "e": 1350, "act": "family_time", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}, {"s": 1350, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.778, 139.7205]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 11, "name": "森 花", "color": "#16a085", "age": 41, "gender": "female", "occupation": "主婦（パート週2）", "income_jpy_year": 1500000, "hourly_wage_jpy": 721, "home_name": "荒川区 西日暮里", "home_lat": 35.7321, "home_lng": 139.7669, "km_from_shimofuri": 2.24, "workplace": null, "initial_balance_jpy": 28000, "segments": [{"s": 0, "e": 390, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 390, "e": 510, "act": "morning_routine_w_kids", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 510, "e": 600, "act": "housework", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 600, "e": 615, "act": "walk", "mode": "walk", "place": "→西日暮里スーパー", "wp": [[35.7321, 139.7669], [35.7327, 139.766]], "cost": 0, "wage": 0, "tp": null}, {"s": 615, "e": 675, "act": "grocery", "mode": "stay", "place": "西日暮里スーパー", "wp": [[35.7327, 139.766]], "cost": 3200, "wage": 0, "tp": {"channel": "店舗", "brand": null}}, {"s": 675, "e": 690, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7327, 139.766], [35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 690, "e": 780, "act": "lunch_home_w_kids", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 780, "e": 930, "act": "housework", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 930, "e": 955, "act": "walk", "mode": "walk", "place": "→霜降銀座 (子連れ)", "wp": [[35.7321, 139.7669], [35.7322, 139.7669], [35.7378, 139.761], [35.7414, 139.7448]], "cost": 0, "wage": 0, "tp": null}, {"s": 955, "e": 1020, "act": "shimofuri_stroll", "mode": "stay", "place": "霜降銀座商店街", "wp": [[35.7414, 139.7448]], "cost": 0, "wage": 0, "tp": {"channel": "霜降銀座", "brand": null}}, {"s": 1020, "e": 1110, "act": "shimofuri_dining", "mode": "stay", "place": "Riverbed in Otherworld (家族)", "wp": [[35.7418, 139.7445]], "cost": 4800, "wage": 0, "tp": {"channel": "霜降銀座", "brand": "Riverbed in Otherworld"}}, {"s": 1110, "e": 1140, "act": "walk", "mode": "walk", "place": "→自宅", "wp": [[35.7418, 139.7445], [35.7378, 139.761], [35.7322, 139.7669], [35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 1140, "e": 1290, "act": "family_time", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 1290, "e": 1380, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}, {"s": 1380, "e": 1440, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.7321, 139.7669]], "cost": 0, "wage": 0, "tp": null}]}, {"id": 12, "name": "井上 達也", "color": "#c0392b", "age": 27, "gender": "male", "occupation": "自動車部品工場（夜勤シフト）", "income_jpy_year": 3600000, "hourly_wage_jpy": 1731, "home_name": "埼玉県 川口", "home_lat": 35.8076, "home_lng": 139.724, "km_from_shimofuri": 7.58, "workplace": {"id": "kawaguchi_factory", "name": "自動車部品工場 (川口)", "lat": 35.812, "lng": 139.7155}, "initial_balance_jpy": 22000, "segments": [{"s": 0, "e": 390, "act": "night_shift", "mode": "stay", "place": "自動車部品工場 (川口)", "wp": [[35.812, 139.7155]], "cost": 0, "wage": 11700, "tp": null}, {"s": 390, "e": 425, "act": "car", "mode": "car", "place": "→自宅", "wp": [[35.812, 139.7155], [35.8076, 139.724]], "cost": 0, "wage": 0, "tp": null}, {"s": 425, "e": 450, "act": "breakfast_home", "mode": "stay", "place": "自宅", "wp": [[35.8076, 139.724]], "cost": 0, "wage": 0, "tp": null}, {"s": 450, "e": 930, "act": "sleep", "mode": "stay", "place": "自宅", "wp": [[35.8076, 139.724]], "cost": 0, "wage": 0, "tp": null}, {"s": 930, "e": 1020, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.8076, 139.724]], "cost": 0, "wage": 0, "tp": {"channel": "YouTube", "brand": null}}, {"s": 1020, "e": 1080, "act": "dinner_home", "mode": "stay", "place": "自宅", "wp": [[35.8076, 139.724]], "cost": 800, "wage": 0, "tp": null}, {"s": 1080, "e": 1260, "act": "leisure", "mode": "stay", "place": "自宅", "wp": [[35.8076, 139.724]], "cost": 0, "wage": 0, "tp": {"channel": "YouTube", "brand": null}}, {"s": 1260, "e": 1295, "act": "car", "mode": "car", "place": "→工場 (夜勤)", "wp": [[35.8076, 139.724], [35.812, 139.7155]], "cost": 0, "wage": 0, "tp": null}, {"s": 1295, "e": 1440, "act": "night_shift", "mode": "stay", "place": "自動車部品工場 (川口)", "wp": [[35.812, 139.7155]], "cost": 0, "wage": 4500, "tp": null}]}]};
+
+const map = L.map('map', {zoomControl: true, attributionControl: false})
+  .setView([DATA.origin.lat, DATA.origin.lng], 13);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  subdomains: 'abcd', maxZoom: 19,
+  attribution: '© OpenStreetMap, © CARTO',
+}).addTo(map);
+
+DATA.pois.forEach(p => {
+  const isRio = p.id === 'rio';
+  const isShotengai = p.id === 'shimofuri_ginza';
+  const color = isRio ? '#ffb84d' : isShotengai ? '#f6c350' : '#5e6b80';
+  const radius = isRio ? 11 : isShotengai ? 13 : 5;
+  L.circleMarker([p.lat, p.lng], {
+    radius, color, fillColor: color, fillOpacity: 0.35, weight: 2,
+  }).bindTooltip(p.name, {direction: 'top'}).addTo(map);
+});
+
+L.circle([DATA.origin.lat, DATA.origin.lng], {
+  radius: 220, color: '#f6c350', fillOpacity: 0.04, weight: 1, dashArray: '4 4',
+}).addTo(map);
+
+// Per-persona marker + trail
+const personState = DATA.personas.map(p => {
+  const marker = L.circleMarker([p.home_lat, p.home_lng], {
+    radius: 7, color: '#ffffff', weight: 2,
+    fillColor: p.color, fillOpacity: 0.95,
+  }).bindTooltip(p.name, {direction: 'top'}).addTo(map);
+  const trail = L.polyline([], {color: p.color, weight: 2,
+                                opacity: 0.55, dashArray: '2 4'}).addTo(map);
+  return {p, marker, trail};
+});
+
+// ----- Time helpers -----
+function tokyoMinutes() {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  });
+  const parts = Object.fromEntries(
+    fmt.formatToParts(new Date()).map(x => [x.type, x.value])
+  );
+  const m = parseInt(parts.hour) * 60 + parseInt(parts.minute)
+          + parseInt(parts.second) / 60;
+  return {
+    minutes: m,
+    dateStr: `${parts.year}-${parts.month}-${parts.day}`,
+    clock: `${parts.hour}:${parts.minute}:${parts.second} JST`,
+  };
+}
+
+function findSegment(person, minutes) {
+  const segs = person.segments;
+  // Linear search over ~15 segments is fine.
+  for (let i = 0; i < segs.length; i++) {
+    if (minutes < segs[i].e) {
+      return minutes >= segs[i].s ? segs[i] : segs[Math.max(0, i - 1)];
+    }
+  }
+  return segs[segs.length - 1];
+}
+
+function positionInSegment(seg, minutes) {
+  if (seg.wp.length === 1) return seg.wp[0];
+  const dur = Math.max(1, seg.e - seg.s);
+  const frac = Math.max(0, Math.min(1, (minutes - seg.s) / dur));
+  const n = seg.wp.length - 1;
+  const idx = Math.min(Math.floor(frac * n), n - 1);
+  const segF = frac * n - idx;
+  const a = seg.wp[idx], b = seg.wp[idx + 1];
+  return [a[0] + (b[0] - a[0]) * segF, a[1] + (b[1] - a[1]) * segF];
+}
+
+function accumulated(person, minutes) {
+  let earned = 0, spent = 0;
+  for (const s of person.segments) {
+    if (s.e <= minutes) {
+      earned += s.wage; spent += s.cost;
+    } else if (s.s <= minutes) {
+      const f = (minutes - s.s) / Math.max(1, s.e - s.s);
+      earned += s.wage * f; spent += s.cost * f;
+    }
+  }
+  return {earned: Math.round(earned), spent: Math.round(spent)};
+}
+
+const ACT_LABEL = {
+  sleep: '💤 睡眠中',
+  morning_routine: '🪥 朝の支度',
+  morning_routine_w_baby: '🪥 朝の支度 (育児)',
+  morning_routine_w_kids: '🪥 朝の支度 (子供と)',
+  family_time: '👨‍👩‍👧 家族時間',
+  childcare: '🍼 育児',
+  housework: '🧺 家事',
+  leisure: '🛋 くつろぎ',
+  hobby: '🎨 趣味',
+  errands: '📋 用事',
+  errands_home: '📋 用事 (自宅)',
+  shop_open: '🍶 開店準備',
+  walk: '🚶 徒歩移動中',
+  train: '🚃 電車移動中',
+  bus: '🚌 バス移動中',
+  car: '🚗 車移動中',
+  work: '💻 勤務中',
+  wfh_work: '🏠 在宅勤務中',
+  night_shift: '🌙 夜勤勤務中',
+  work_shop: '🍶 営業中 (居酒屋)',
+  shop_prep: '🍶 仕込み',
+  shop_cleanup: '🧽 後片付け',
+  shopping_supply: '📦 仕入れ',
+  class: '📚 授業',
+  study_home: '📖 自習',
+  study_night: '📖 夜の勉強',
+  lunch_home: '🍱 ランチ (自宅)',
+  lunch_konbini: '🍙 ランチ (コンビニ)',
+  lunch_out: '🍱 外食ランチ',
+  lunch_home_w_kids: '🍱 ランチ (子供と)',
+  dinner_home: '🍳 夕食 (自宅)',
+  dinner_out: '🍽 外食ディナー',
+  breakfast_home: '🍞 朝食 (自宅)',
+  grocery: '🛒 スーパー',
+  shopping_apparel: '👕 アパレル',
+  instagram_scroll: '📱 SNS',
+  tv_time: '📺 TV鑑賞',
+  wind_down: '🛀 リラックス',
+  shimofuri_grocery: '🥬 霜降銀座で買物',
+  shimofuri_dining: '⭐ Riverbed で食事',
+  shimofuri_stroll: '🚶 商店街さんぽ',
+};
+
+function fmtYen(n) { return (n||0).toLocaleString('ja-JP') + '円'; }
+
+// Build side panel
+const list = document.getElementById('personList');
+DATA.personas.forEach(p => {
+  const div = document.createElement('div');
+  div.className = 'person';
+  div.id = 'pp' + p.id;
+  div.innerHTML = `
+    <div class="dot" style="background:${p.color};color:${p.color}"></div>
+    <div>
+      <div class="name">${p.name} <span class="age">(${p.age})</span></div>
+      <div class="occ">${p.occupation} / ${p.home_name} (${p.km_from_shimofuri}km)</div>
+      <div class="activity" data-act></div>
+      <div class="place" data-place></div>
+      <div class="mode" data-mode></div>
+      <div class="row"><span>残高</span><b data-balance>—</b></div>
+      <div class="row"><span>本日収入</span><b data-earned>—</b></div>
+      <div class="row"><span>本日支出</span><b data-spent>—</b></div>
+    </div>`;
+  list.appendChild(div);
+});
+
+// Compute trail: positions sampled every 2 min over last 30 min.
+function buildTrail(person, currentMin) {
+  const trail = [];
+  for (let t = Math.max(0, currentMin - 30); t <= currentMin; t += 2) {
+    const seg = findSegment(person, t);
+    trail.push(positionInSegment(seg, t));
+  }
+  return trail;
+}
+
+// Scrub state
+const scrub = document.getElementById('scrub');
+const liveBtn = document.getElementById('liveBtn');
+let liveMode = true;
+
+scrub.oninput = () => {
+  liveMode = false;
+  liveBtn.style.background = 'var(--accent)';
+  liveBtn.textContent = 'LIVE に戻る';
+  update();
+};
+liveBtn.onclick = () => {
+  liveMode = true;
+  liveBtn.style.background = 'var(--green)';
+  liveBtn.textContent = 'LIVE';
+  update();
+};
+
+function update() {
+  const tk = tokyoMinutes();
+  const liveMin = tk.minutes;
+  // Scrubber max = current minute (no future allowed)
+  scrub.max = Math.floor(liveMin);
+  const minutes = liveMode ? liveMin : Math.min(+scrub.value, liveMin);
+  if (liveMode) scrub.value = Math.floor(minutes);
+
+  document.getElementById('clock').textContent = tk.clock + (liveMode ? '' : ' (履歴閲覧中)');
+  document.getElementById('dateLine').textContent =
+    `${tk.dateStr} (${DATA.weekday_jp}) JST / N=${DATA.personas.length}`;
+
+  let totSleep = 0, totWork = 0, totShot = 0, totRio = 0;
+  let totEarn = 0, totSpend = 0;
+
+  personState.forEach(({p, marker, trail}) => {
+    const seg = findSegment(p, minutes);
+    const pos = positionInSegment(seg, minutes);
+    marker.setLatLng(pos);
+
+    const moving = seg.mode !== 'stay';
+    const tp = seg.tp;
+    const atShot = tp && tp.channel === '霜降銀座';
+    const atRio = tp && tp.brand === 'Riverbed in Otherworld';
+    const sleeping = seg.act === 'sleep';
+    const WORK_ACTS = new Set(['work', 'wfh_work', 'night_shift',
+                                'work_shop', 'shop_prep', 'shop_cleanup']);
+    const working = WORK_ACTS.has(seg.act);
+
+    marker.setStyle({
+      radius: atRio ? 11 : atShot ? 9 : moving ? 8 : 7,
+      color: atRio ? '#ffb84d' : sleeping ? '#888888' : '#ffffff',
+      weight: atRio ? 3 : sleeping ? 1 : 2,
+      fillOpacity: sleeping ? 0.6 : 0.95,
+    });
+
+    // Trail
+    trail.setLatLngs(buildTrail(p, minutes));
+
+    if (sleeping) totSleep++;
+    if (working) totWork++;
+    if (atShot) totShot++;
+    if (atRio) totRio++;
+
+    const acc = accumulated(p, minutes);
+    totEarn += acc.earned; totSpend += acc.spent;
+
+    const el = document.getElementById('pp' + p.id);
+    el.classList.toggle('sleeping', sleeping);
+    el.classList.toggle('working', working);
+    el.classList.toggle('commuting', moving);
+    el.classList.toggle('visiting-shotengai', !!atShot && !atRio);
+    el.classList.toggle('visiting-rio', !!atRio);
+    el.querySelector('.dot').classList.toggle('moving', moving);
+
+    el.querySelector('[data-act]').textContent =
+      ACT_LABEL[seg.act] || seg.act;
+    el.querySelector('[data-place]').textContent = '@ ' + seg.place;
+    el.querySelector('[data-mode]').textContent =
+      DATA.mode_label[seg.mode] + (moving
+        ? `  (${((minutes - seg.s) / Math.max(1, seg.e - seg.s) * 100).toFixed(0)}% 到着まで)`
+        : '');
+    el.querySelector('[data-balance]').textContent =
+      fmtYen(p.initial_balance_jpy + acc.earned - acc.spent);
+    el.querySelector('[data-earned]').textContent = '+' + fmtYen(acc.earned);
+    el.querySelector('[data-spent]').textContent = '−' + fmtYen(acc.spent);
+  });
+
+  document.getElementById('totals').innerHTML = `
+    <div><span>就寝中</span><b>${totSleep}人</b></div>
+    <div><span>勤務中</span><b style="color:var(--green)">${totWork}人</b></div>
+    <div><span>霜降銀座 滞在</span><b style="color:var(--accent)">${totShot}人</b></div>
+    <div><span>RIO 来店</span><b style="color:var(--rio)">${totRio}人</b></div>
+    <div><span>コホート累計 収入</span><b>${fmtYen(totEarn)}</b></div>
+    <div><span>コホート累計 支出</span><b>${fmtYen(totSpend)}</b></div>`;
+}
+
+setInterval(update, 1000);
+update();
+</script>
+</body>
+</html>
