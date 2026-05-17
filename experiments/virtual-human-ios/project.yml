@@ -30,8 +30,9 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: Sources
-    resources:
       - path: Resources/schedules.json
+        buildPhase: resources
+        type: file
     info:
       path: Resources/Info.plist
     settings:
