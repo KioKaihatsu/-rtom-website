@@ -63,13 +63,14 @@ jobs:
           xcrun simctl list devices ios available | head -40
 
       - name: Build for iOS Simulator
+        id: build
         run: |
           set -o pipefail
+          set +e
           xcodebuild \
             -project VirtualHumanMonitor.xcodeproj \
             -scheme VirtualHumanMonitor \
             -configuration Debug \
-            -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath ./DerivedData \
             CODE_SIGNING_ALLOWED=NO \
@@ -77,6 +78,24 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             ONLY_ACTIVE_ARCH=NO \
             build 2>&1 | tee build.log
+          rc=${PIPESTATUS[0]}
+          echo "xcodebuild exit code: $rc"
+          if [ $rc -ne 0 ]; then
+            {
+              echo "## ❌ xcodebuild failed (exit $rc)"
+              echo ""
+              echo "### First errors/warnings"
+              echo '```'
+              grep -E "(error:|warning:|fatal error|note:|❌|** BUILD FAILED|The following build commands failed|Undefined symbol)" build.log | head -60 || true
+              echo '```'
+              echo ""
+              echo "### Last 80 lines of log"
+              echo '```'
+              tail -80 build.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit $rc
+          fi
 
       - name: Locate built .app
         id: locate
