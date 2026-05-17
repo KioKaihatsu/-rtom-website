@@ -62,6 +62,63 @@ jobs:
         run: |
           xcrun simctl list devices ios available | head -40
 
+      - name: Smoke test (build minimal SwiftUI app)
+        id: smoke
+        run: |
+          set -e
+          mkdir -p /tmp/smoke/App /tmp/smoke/Res
+          cat > /tmp/smoke/App/SmokeApp.swift <<'EOF'
+          import SwiftUI
+          @main
+          struct SmokeApp: App {
+            var body: some Scene {
+              WindowGroup { Text("smoke").padding() }
+            }
+          }
+          EOF
+          cat > /tmp/smoke/Res/Info.plist <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+            <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+            <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>CFBundleShortVersionString</key><string>1.0</string>
+            <key>LSRequiresIPhoneOS</key><true/>
+            <key>UILaunchScreen</key><dict/>
+          </dict>
+          </plist>
+          EOF
+          cat > /tmp/smoke/project.yml <<'EOF'
+          name: Smoke
+          options:
+            deploymentTarget:
+              iOS: "17.0"
+          targets:
+            Smoke:
+              type: application
+              platform: iOS
+              deploymentTarget: "17.0"
+              sources: [App]
+              settings:
+                base:
+                  PRODUCT_BUNDLE_IDENTIFIER: jp.test.smoke
+                  PRODUCT_NAME: Smoke
+                  GENERATE_INFOPLIST_FILE: NO
+                  INFOPLIST_FILE: Res/Info.plist
+                  CODE_SIGNING_ALLOWED: NO
+          EOF
+          cd /tmp/smoke
+          xcodegen generate
+          xcodebuild build \
+            -project Smoke.xcodeproj \
+            -scheme Smoke \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tail -40
+          echo "✅ smoke build succeeded"
+
       - name: Build for iOS Simulator
         id: build
         run: |
@@ -80,27 +137,19 @@ jobs:
             build 2>&1 | tee build.log
           rc=${PIPESTATUS[0]}
           echo "xcodebuild exit code: $rc"
+          echo "build.log size: $(wc -c < build.log) bytes, $(wc -l < build.log) lines"
           if [ $rc -ne 0 ]; then
-            # Emit each significant error/warning line as a public ::error:: annotation
-            grep -E "(error:|fatal error|cannot find|undeclared|Use of undeclared|expected|extraneous|missing|argument labels|incorrect argument|** BUILD FAILED)" build.log \
-              | head -15 \
-              | awk '{
-                  gsub(/%/, "%25");
-                  gsub(/\r/, "");
-                  gsub(/\n/, "%0A");
-                  gsub(/::/, "%3A%3A");
-                  print "::error::" $0
-                }'
-            # Also write to step summary
-            {
-              echo "## ❌ xcodebuild failed (exit $rc)"
-              echo ""
-              echo '```'
-              grep -E "(error:|fatal error|cannot find|undeclared|** BUILD FAILED|The following build commands failed|Undefined symbol)" build.log | head -50
-              echo "..."
-              tail -100 build.log
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Build failed with exit $rc - build.log size $(wc -c < build.log) bytes"
+            # First 10 error/warning lines as annotations
+            grep -nE "(error:|fatal error|cannot find|undeclared|warning:|BUILD FAILED)" build.log | head -10 | while IFS= read -r line; do
+              clean=$(echo "$line" | tr -d '\r' | sed -e 's/%/%25/g' -e 's/::/%3A%3A/g')
+              echo "::error::${clean}"
+            done
+            # Tail of log as annotations (last 5 non-empty lines)
+            tail -10 build.log | grep -v '^$' | while IFS= read -r line; do
+              clean=$(echo "$line" | tr -d '\r' | sed -e 's/%/%25/g' -e 's/::/%3A%3A/g' | head -c 200)
+              echo "::warning::tail: ${clean}"
+            done
             exit $rc
           fi
 
