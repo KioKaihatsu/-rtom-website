@@ -13,6 +13,7 @@ from typing import Any
 from personas import build_cohort
 from places import SHIMOFURI_GINZA, RIO, WORKPLACES, all_places
 from schedules import Segment, schedule_for
+from ec_events import generate_purchases
 
 
 PALETTE = [
@@ -71,6 +72,10 @@ def build_payload(target_date: date_t) -> dict[str, Any]:
             ),
             "initial_balance_jpy": persona.state.wallet_jpy,
             "segments": [segment_to_dict(s) for s in segments],
+            "purchases": [
+                p.to_dict()
+                for p in generate_purchases(persona, [segment_to_dict(s) for s in segments], target_date)
+            ],
         })
 
     return {
@@ -128,6 +133,20 @@ def build_dual_payload() -> dict[str, Any]:
             "schedule_weekend": [
                 segment_to_dict(s)
                 for s in schedule_for(t.name, home, weekend_date)
+            ],
+            "purchases_weekday": [
+                p.to_dict() for p in generate_purchases(
+                    persona,
+                    [segment_to_dict(s) for s in schedule_for(t.name, home, weekday_date)],
+                    weekday_date,
+                )
+            ],
+            "purchases_weekend": [
+                p.to_dict() for p in generate_purchases(
+                    persona,
+                    [segment_to_dict(s) for s in schedule_for(t.name, home, weekend_date)],
+                    weekend_date,
+                )
             ],
         })
 
@@ -221,6 +240,38 @@ HTML_TEMPLATE = """<!DOCTYPE html>
   .person .row b{{color:var(--text);font:600 11px ui-monospace,monospace}}
   .legend{{padding:10px 16px;border-bottom:1px solid var(--line);
     font-size:10px;color:var(--dim);line-height:1.5}}
+  /* EC purchase feed */
+  .feed{{padding:0 16px 8px;border-bottom:1px solid var(--line);
+    max-height:240px;overflow:hidden;position:relative}}
+  .feed h2{{font-size:11px;font-weight:700;color:var(--accent);
+    margin:10px 0 6px;display:flex;justify-content:space-between;align-items:center}}
+  .feed h2 .sum{{font:700 11px ui-monospace,monospace;color:var(--text)}}
+  .feed-row{{display:grid;grid-template-columns:42px 1fr auto;gap:8px;
+    padding:5px 0;border-bottom:1px dotted rgba(255,255,255,.05);
+    font-size:11px;animation:slideIn .4s ease-out}}
+  @keyframes slideIn{{from{{transform:translateX(-8px);opacity:0}}to{{transform:translateX(0);opacity:1}}}}
+  .feed-row .time{{color:var(--dim);font:600 10px ui-monospace,monospace}}
+  .feed-row .who{{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+  .feed-row .who small{{color:var(--dim);font-size:9px;margin-left:4px}}
+  .feed-row .price{{color:var(--accent);font:600 11px ui-monospace,monospace}}
+  .feed-row.impulse{{background:rgba(239,111,108,.08)}}
+  /* Map purchase pulse */
+  .buy-burst{{position:absolute;font-size:18px;pointer-events:none;
+    animation:burst 1.2s ease-out forwards;color:var(--accent);
+    text-shadow:0 0 6px rgba(0,0,0,.8);font-weight:700}}
+  @keyframes burst{{
+    0%{{transform:translate(-50%,-50%) scale(.5);opacity:0}}
+    20%{{transform:translate(-50%,-110%) scale(1.2);opacity:1}}
+    100%{{transform:translate(-50%,-180%) scale(.9);opacity:0}}
+  }}
+  /* Hourly histogram */
+  .hist{{padding:10px 16px;border-bottom:1px solid var(--line)}}
+  .hist h2{{font-size:11px;font-weight:700;color:var(--accent);margin:0 0 6px}}
+  .hist svg{{width:100%;height:50px;display:block}}
+  .hist .bar{{fill:var(--dim)}}
+  .hist .bar.past{{fill:var(--accent)}}
+  .hist .now{{stroke:var(--green);stroke-width:1.5;stroke-dasharray:2 2}}
+  .hist .lbl{{fill:var(--dim);font:9px ui-monospace,monospace}}
 </style>
 </head>
 <body>
@@ -238,11 +289,18 @@ HTML_TEMPLATE = """<!DOCTYPE html>
       </div>
     </header>
     <div class="totals" id="totals"></div>
+    <div class="hist">
+      <h2>EC 購買時間帯ヒストグラム</h2>
+      <svg id="hist" viewBox="0 0 480 50" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="feed">
+      <h2>💸 直近のEC購買 <span class="sum" id="feedSum"></span></h2>
+      <div id="feedRows"></div>
+    </div>
     <div class="legend">
-      ● 仮想人格12名の今この瞬間の位置・行動・収支を、実線路（山手線/京浜東北/田園都市/三田/南北 等）と
-      徒歩・電車・バス・車で表示。霜降銀座来訪中は背景ハイライト、
-      <b style="color:var(--rio)">★</b> = Riverbed in Otherworld 来店中。
-      勤務中=緑バー / 移動中=青バー。
+      ● 仮想人格12名の今この瞬間の位置・行動・収支・EC購買を可視化。
+      位置は実線路（山手線/京浜東北/田園都市/三田/南北）と徒歩・電車・車。
+      購買時には地図上に💸が舞う。<b style="color:var(--rio)">★</b> = RIO 来店中。
     </div>
     <div id="personList"></div>
   </aside>
@@ -433,6 +491,21 @@ liveBtn.onclick = () => {{
   update();
 }};
 
+// Track which purchases we've already shown a burst for
+const burstSeen = new Set();
+
+function spawnBurst(latlng, price) {{
+  const pt = map.latLngToContainerPoint(latlng);
+  const mapEl = document.getElementById('map');
+  const el = document.createElement('div');
+  el.className = 'buy-burst';
+  el.style.left = pt.x + 'px';
+  el.style.top = pt.y + 'px';
+  el.textContent = '💸 ¥' + price.toLocaleString('ja-JP');
+  mapEl.appendChild(el);
+  setTimeout(() => el.remove(), 1300);
+}}
+
 function update() {{
   const tk = tokyoMinutes();
   const liveMin = tk.minutes;
@@ -447,6 +520,7 @@ function update() {{
 
   let totSleep = 0, totWork = 0, totShot = 0, totRio = 0;
   let totEarn = 0, totSpend = 0;
+  let totECSpend = 0, totECCount = 0;
 
   personState.forEach(({{p, marker, trail}}) => {{
     const seg = findSegment(p, minutes);
@@ -480,6 +554,22 @@ function update() {{
     const acc = accumulated(p, minutes);
     totEarn += acc.earned; totSpend += acc.spent;
 
+    // EC purchases up to current minute
+    let ecCount = 0, ecSpent = 0;
+    (p.purchases || []).forEach(buy => {{
+      if (buy.m <= minutes) {{
+        ecCount++; ecSpent += buy.p;
+        const key = `${{p.id}}-${{buy.m}}`;
+        // Trigger burst animation if purchase just occurred (within last 4 sim minutes during live, OR within last 90 sec real-time of scrub)
+        if (liveMode && (minutes - buy.m) <= 0.6 && !burstSeen.has(key)) {{
+          spawnBurst(pos, buy.p);
+          burstSeen.add(key);
+        }}
+      }}
+    }});
+    totECSpend += ecSpent;
+    totECCount += ecCount;
+
     const el = document.getElementById('pp' + p.id);
     el.classList.toggle('sleeping', sleeping);
     el.classList.toggle('working', working);
@@ -506,8 +596,53 @@ function update() {{
     <div><span>勤務中</span><b style="color:var(--green)">${{totWork}}人</b></div>
     <div><span>霜降銀座 滞在</span><b style="color:var(--accent)">${{totShot}}人</b></div>
     <div><span>RIO 来店</span><b style="color:var(--rio)">${{totRio}}人</b></div>
-    <div><span>コホート累計 収入</span><b>${{fmtYen(totEarn)}}</b></div>
-    <div><span>コホート累計 支出</span><b>${{fmtYen(totSpend)}}</b></div>`;
+    <div><span>EC 累計購買</span><b>${{totECCount}}件 / ${{fmtYen(totECSpend)}}</b></div>
+    <div><span>累計支出 (実店舗+EC)</span><b>${{fmtYen(totSpend + totECSpend)}}</b></div>`;
+
+  // --- EC purchase feed (most recent 8 purchases up to now) ---
+  const allBuys = [];
+  DATA.personas.forEach(p => (p.purchases || []).forEach(b => {{
+    if (b.m <= minutes) allBuys.push({{p, b}});
+  }}));
+  allBuys.sort((a, z) => z.b.m - a.b.m);  // newest first
+  const feedRows = document.getElementById('feedRows');
+  feedRows.innerHTML = allBuys.slice(0, 8).map(({{p, b}}) => {{
+    const hh = String(Math.floor(b.m / 60)).padStart(2, '0');
+    const mm = String(b.m % 60).padStart(2, '0');
+    const impulse = b.imp ? 'impulse' : '';
+    const tag = b.imp ? '💥' : '';
+    return `<div class="feed-row ${{impulse}}">
+      <div class="time">${{hh}}:${{mm}}</div>
+      <div class="who">
+        <span style="color:${{p.color}}">●</span> ${{p.name.split(' ')[1] || p.name}}
+        ${{tag}} <small>${{b.ch}} · ${{b.cat}} · ${{b.sku}}</small>
+      </div>
+      <div class="price">¥${{b.p.toLocaleString('ja-JP')}}</div>
+    </div>`;
+  }}).join('');
+  document.getElementById('feedSum').textContent =
+    `${{allBuys.length}}件 ¥${{totECSpend.toLocaleString('ja-JP')}}`;
+
+  // --- Hourly histogram (24 buckets) ---
+  const buckets = new Array(24).fill(0);
+  DATA.personas.forEach(p => (p.purchases || []).forEach(b => {{
+    buckets[Math.floor(b.m / 60)]++;
+  }}));
+  const maxB = Math.max(1, ...buckets);
+  const W = 480, H = 50, BW = W / 24, currentHour = minutes / 60;
+  const bars = buckets.map((v, i) => {{
+    const h = (v / maxB) * (H - 12);
+    const isPast = i < currentHour;
+    return `<rect class="bar ${{isPast ? 'past' : ''}}"
+              x="${{i * BW + 1}}" y="${{H - h - 10}}"
+              width="${{BW - 2}}" height="${{h}}"/>`;
+  }}).join('');
+  const labels = [0, 6, 12, 18, 23].map(h => {{
+    return `<text class="lbl" x="${{h * BW + BW/2}}" y="${{H - 1}}" text-anchor="middle">${{h}}</text>`;
+  }}).join('');
+  const nowLine = `<line class="now" x1="${{currentHour * BW}}" y1="0"
+                                       x2="${{currentHour * BW}}" y2="${{H - 10}}"/>`;
+  document.getElementById('hist').innerHTML = bars + nowLine + labels;
 }}
 
 setInterval(update, 1000);
