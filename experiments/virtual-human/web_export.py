@@ -242,18 +242,24 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     font-size:10px;color:var(--dim);line-height:1.5}}
   /* EC purchase feed */
   .feed{{padding:0 16px 8px;border-bottom:1px solid var(--line);
-    max-height:240px;overflow:hidden;position:relative}}
+    max-height:260px;overflow:hidden;position:relative}}
   .feed h2{{font-size:11px;font-weight:700;color:var(--accent);
     margin:10px 0 6px;display:flex;justify-content:space-between;align-items:center}}
   .feed h2 .sum{{font:700 11px ui-monospace,monospace;color:var(--text)}}
   .feed-row{{display:grid;grid-template-columns:42px 1fr auto;gap:8px;
-    padding:5px 0;border-bottom:1px dotted rgba(255,255,255,.05);
-    font-size:11px;animation:slideIn .4s ease-out}}
+    padding:6px 0;border-bottom:1px dotted rgba(255,255,255,.05);
+    font-size:11px}}
+  .feed-row.new{{animation:slideIn .35s ease-out}}
   @keyframes slideIn{{from{{transform:translateX(-8px);opacity:0}}to{{transform:translateX(0);opacity:1}}}}
   .feed-row .time{{color:var(--dim);font:600 10px ui-monospace,monospace}}
-  .feed-row .who{{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
-  .feed-row .who small{{color:var(--dim);font-size:9px;margin-left:4px}}
-  .feed-row .price{{color:var(--accent);font:600 11px ui-monospace,monospace}}
+  .feed-row .who{{color:var(--text);overflow:hidden}}
+  .feed-row .who .sku{{font-size:10.5px;font-weight:600;color:var(--text);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}}
+  .feed-row .who .meta{{color:var(--dim);font-size:9.5px;display:block}}
+  .feed-row .who .why{{color:var(--accent);font-size:9.5px;display:block;
+    font-style:italic;opacity:.85}}
+  .feed-row .price{{color:var(--accent);font:600 11.5px ui-monospace,monospace;
+    text-align:right;white-space:nowrap}}
   .feed-row.impulse{{background:rgba(239,111,108,.08)}}
   /* Map purchase pulse */
   .buy-burst{{position:absolute;font-size:18px;pointer-events:none;
@@ -494,6 +500,12 @@ liveBtn.onclick = () => {{
 // Track which purchases we've already shown a burst for
 const burstSeen = new Set();
 
+function escapeHtml(s) {{
+  return String(s).replace(/[&<>"']/g, c => ({{
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }}[c]));
+}}
+
 function spawnBurst(latlng, price) {{
   const pt = map.latLngToContainerPoint(latlng);
   const mapEl = document.getElementById('map');
@@ -600,26 +612,49 @@ function update() {{
     <div><span>累計支出 (実店舗+EC)</span><b>${{fmtYen(totSpend + totECSpend)}}</b></div>`;
 
   // --- EC purchase feed (most recent 8 purchases up to now) ---
+  // Use stable keys so DOM is only added/removed, not re-rendered (no flicker).
   const allBuys = [];
   DATA.personas.forEach(p => (p.purchases || []).forEach(b => {{
     if (b.m <= minutes) allBuys.push({{p, b}});
   }}));
   allBuys.sort((a, z) => z.b.m - a.b.m);  // newest first
+  const visible = allBuys.slice(0, 8);
   const feedRows = document.getElementById('feedRows');
-  feedRows.innerHTML = allBuys.slice(0, 8).map(({{p, b}}) => {{
-    const hh = String(Math.floor(b.m / 60)).padStart(2, '0');
-    const mm = String(b.m % 60).padStart(2, '0');
-    const impulse = b.imp ? 'impulse' : '';
-    const tag = b.imp ? '💥' : '';
-    return `<div class="feed-row ${{impulse}}">
-      <div class="time">${{hh}}:${{mm}}</div>
-      <div class="who">
-        <span style="color:${{p.color}}">●</span> ${{p.name.split(' ')[1] || p.name}}
-        ${{tag}} <small>${{b.ch}} · ${{b.cat}} · ${{b.sku}}</small>
-      </div>
-      <div class="price">¥${{b.p.toLocaleString('ja-JP')}}</div>
-    </div>`;
-  }}).join('');
+
+  const wantKeys = visible.map(({{p, b}}) => `${{p.id}}-${{b.m}}`);
+  // Remove rows no longer in top-8
+  Array.from(feedRows.children).forEach(child => {{
+    if (!wantKeys.includes(child.dataset.key)) child.remove();
+  }});
+  // Add missing rows (in correct order) — new rows get animation
+  visible.forEach(({{p, b}}, idx) => {{
+    const key = `${{p.id}}-${{b.m}}`;
+    let row = feedRows.querySelector(`[data-key="${{key}}"]`);
+    if (!row) {{
+      row = document.createElement('div');
+      row.className = 'feed-row new' + (b.imp ? ' impulse' : '');
+      row.dataset.key = key;
+      const hh = String(Math.floor(b.m / 60)).padStart(2, '0');
+      const mm = String(b.m % 60).padStart(2, '0');
+      const tag = b.imp ? '💥' : '🛒';
+      const lastName = (p.name.split(' ')[1] || p.name);
+      const why = b.why || '';
+      row.innerHTML = `
+        <div class="time">${{hh}}:${{mm}}</div>
+        <div class="who">
+          <span class="sku">${{tag}} ${{escapeHtml(b.sku)}}</span>
+          <span class="meta"><span style="color:${{p.color}}">●</span> ${{lastName}} · ${{b.ch}} · ${{b.cat}}</span>
+          ${{why ? `<span class="why">${{escapeHtml(why)}}</span>` : ''}}
+        </div>
+        <div class="price">¥${{b.p.toLocaleString('ja-JP')}}</div>`;
+      // Remove the animation class shortly so a future remount won't re-animate
+      setTimeout(() => row.classList.remove('new'), 600);
+    }}
+    // Ensure row is at the correct index in the parent
+    if (feedRows.children[idx] !== row) {{
+      feedRows.insertBefore(row, feedRows.children[idx] || null);
+    }}
+  }});
   document.getElementById('feedSum').textContent =
     `${{allBuys.length}}件 ¥${{totECSpend.toLocaleString('ja-JP')}}`;
 
