@@ -2,7 +2,7 @@
   "name": "霜降銀座コホート監視",
   "short_name": "霜降銀座監視",
   "description": "仮想人格12名のリアルタイム監視ステーション",
-  "start_url": "./",
+  "start_url": "monitor.html",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0f1419",
