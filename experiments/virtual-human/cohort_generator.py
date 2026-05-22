@@ -76,6 +76,8 @@ class SimpleTraits:
     prefecture: str
     home_lat: float
     home_lng: float
+    commute_target_lat: float | None
+    commute_target_lng: float | None
     openness: float
     conscientiousness: float
     extraversion: float
@@ -205,6 +207,47 @@ def _derive_brand_affinity(
     ]}
 
 
+# Tokyo core / sub-centers for office commute targets
+_TOKYO_CORES = [
+    (35.6812, 139.7671),   # 東京駅 / 大手町
+    (35.6594, 139.7005),   # 渋谷
+    (35.6896, 139.7006),   # 新宿
+    (35.7295, 139.7110),   # 池袋
+    (35.6585, 139.7454),   # 六本木
+    (35.6284, 139.7387),   # 品川
+]
+
+
+def _workplace_for(template_id: str, home_lat: float, home_lng: float,
+                    rng: random.Random) -> tuple[float | None, float | None]:
+    """Workplace coordinates approximation by schedule template.
+
+    - office/healthcare: nearest Tokyo core + jitter
+    - wfh: home
+    - student: 西早稲田 / 御茶ノ水 / 三田 area
+    - retail/shift/home/retired: stays in own neighbourhood
+    """
+    if template_id == "wfh":
+        return (home_lat, home_lng)
+    if template_id in ("office", "healthcare"):
+        # nearest of the cores
+        target = min(_TOKYO_CORES,
+                     key=lambda c: (c[0] - home_lat) ** 2 + (c[1] - home_lng) ** 2)
+        return (target[0] + rng.uniform(-0.008, 0.008),
+                target[1] + rng.uniform(-0.012, 0.012))
+    if template_id == "student":
+        unis = [(35.7062, 139.7195),  # 早稲田
+                (35.7022, 139.7621),  # 御茶ノ水/東大
+                (35.6477, 139.7400),  # 三田/慶應
+                (35.6754, 139.7600)]  # 麻布
+        target = rng.choice(unis)
+        return (target[0] + rng.uniform(-0.005, 0.005),
+                target[1] + rng.uniform(-0.005, 0.005))
+    # shift/retail/home/retired: small local jitter (stays near home)
+    return (home_lat + rng.uniform(-0.006, 0.006),
+            home_lng + rng.uniform(-0.006, 0.006))
+
+
 def _sample_name(gender: str, rng: random.Random) -> str:
     sei = rng.choice([
         "佐藤", "鈴木", "高橋", "田中", "渡辺", "伊藤", "山本", "中村",
@@ -251,6 +294,8 @@ def generate_cohort(n: int = 1000, seed: int = 42) -> list[SimplePersona]:
             name = f"{name}_{i}"
         used_names.add(name)
         affinity = _derive_brand_affinity(age, gender, income, o, rng)
+        # Workplace approximation by template
+        wp_lat, wp_lng = _workplace_for(occ[3], lat, lng, rng)
         traits = SimpleTraits(
             name=name,
             age=age,
@@ -261,6 +306,8 @@ def generate_cohort(n: int = 1000, seed: int = 42) -> list[SimplePersona]:
             prefecture=prefecture[0],
             home_lat=round(lat, 5),
             home_lng=round(lng, 5),
+            commute_target_lat=round(wp_lat, 5) if wp_lat is not None else None,
+            commute_target_lng=round(wp_lng, 5) if wp_lng is not None else None,
             openness=round(o, 2),
             conscientiousness=round(c, 2),
             extraversion=round(e, 2),
