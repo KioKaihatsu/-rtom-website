@@ -318,6 +318,7 @@ class Purchase:
     impulse: bool
     reason: str
     trigger_action: str
+    why_lines: tuple[str, ...] = ()  # 2-3 行の購入理由（性格×文脈×ブランド）
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -329,7 +330,177 @@ class Purchase:
             "imp": self.impulse,
             "why": self.reason,
             "act": self.trigger_action,
+            "whys": list(self.why_lines),
         }
+
+
+# ============================================================================
+# Persona insight helpers — for rich story cards
+# ============================================================================
+
+def personality_blurb(persona) -> str:
+    """1行で性格を表す。例: '計画的 / 内向的 / 安定志向'"""
+    t = persona.traits
+    bits: list[str] = []
+    if t.conscientiousness >= 0.72: bits.append("計画的")
+    elif t.conscientiousness <= 0.40: bits.append("行き当たりばったり")
+    if t.openness >= 0.72: bits.append("好奇心旺盛")
+    elif t.openness <= 0.40: bits.append("保守的")
+    if t.neuroticism >= 0.60: bits.append("慎重")
+    elif t.neuroticism <= 0.35: bits.append("楽観的")
+    if t.extraversion >= 0.65: bits.append("外向的")
+    elif t.extraversion <= 0.40: bits.append("内向的")
+    if t.agreeableness >= 0.75: bits.append("協調的")
+    return " / ".join(bits) if bits else "標準的"
+
+
+def derive_interests(persona) -> list[str]:
+    """興味・嗜好を5項目程度。"""
+    t = persona.traits
+    age = t.age
+    income = t.income_jpy_year
+    aff = t.brand_affinity
+    tpl = getattr(t, "template", "office")
+    out: list[str] = []
+
+    # Lifestyle/work
+    if tpl == "wfh":          out.append("在宅環境投資")
+    if tpl == "student":      out.append("SNSトレンド")
+    if tpl == "home":         out.append("家計・子供グッズ")
+    if tpl == "retired":      out.append("健康・実用品")
+    if tpl == "office" and age < 35: out.append("通勤グッズ")
+    if tpl == "healthcare":   out.append("シフト勤務スタイル")
+
+    # Personality-derived
+    if t.openness >= 0.72:        out.append("新製品アンテナ")
+    if t.conscientiousness >= 0.72: out.append("コスパ重視")
+    if t.neuroticism >= 0.60:     out.append("安心リピート派")
+    if t.extraversion >= 0.65 and age <= 35: out.append("インスタ映え")
+    if t.agreeableness >= 0.75:   out.append("家族・友人優先")
+
+    # Brand affinity
+    if aff.get("Amazon", 0) >= 0.85:        out.append("Amazon ヘビー")
+    if aff.get("Blue Bottle", 0) >= 0.70:   out.append("スペシャルティ珈琲")
+    if aff.get("MUJI", 0) >= 0.70:          out.append("無印シンプル派")
+    if aff.get("Uniqlo", 0) >= 0.75:        out.append("ユニクロ常用")
+    if aff.get("ZARA", 0) >= 0.60:          out.append("ファストファッション")
+
+    # Income tier
+    if income >= 8_000_000:   out.append("プチ贅沢OK")
+    elif income < 2_500_000:  out.append("最安値志向")
+
+    # Age-specific
+    if age <= 22:             out.append("TikTok 経由トレンド")
+    if 25 <= age <= 35 and t.gender == "female": out.append("コスメ・スキンケア")
+    if age >= 60:             out.append("健康サプリ・実用品")
+
+    # Dedupe preserving order, max 6
+    seen: set = set()
+    deduped: list[str] = []
+    for x in out:
+        if x not in seen:
+            seen.add(x)
+            deduped.append(x)
+    if not deduped:
+        deduped = ["標準的な消費者"]
+    return deduped[:6]
+
+
+def _why_lines(persona, channel: str, category: str, action: str,
+               minute: int, impulse: bool) -> list[str]:
+    """購入理由を 2-3 行で。性格 × チャネル × タイミング × カテゴリの合成。"""
+    t = persona.traits
+    age = t.age
+    income = t.income_jpy_year
+    aff = t.brand_affinity
+    lines: list[str] = []
+
+    # --- Timing / action context ---
+    h = minute // 60
+    if action == "instagram_scroll":
+        lines.append("Instagram 広告で目に留まり、その場でタップ")
+    elif action == "tv_time":
+        lines.append("テレビ視聴中の合間に スマホで購入")
+    elif action == "train":
+        if h < 12:
+            lines.append("朝の通勤電車で広告に触れて即注文")
+        else:
+            lines.append("帰りの電車で『そういえば』と思い出して買う")
+    elif action == "wind_down":
+        lines.append("寝る前のスマホ時間にカートを処理")
+    elif action == "wfh_work":
+        lines.append("在宅勤務の合間、コーヒー1杯のついでに")
+    elif action == "work":
+        lines.append("勤務中にこっそり (5分の隙間消費)")
+    elif action == "leisure":
+        if 13 <= h < 17:
+            lines.append("週末/午後の余裕時間に整理買い")
+        elif 19 <= h < 22:
+            lines.append("夕食後のソファ時間に判断")
+    elif action in ("morning_routine", "morning_routine_w_baby",
+                    "morning_routine_w_kids", "breakfast_home"):
+        lines.append("朝食を済ませながら昨夜のカートを確定")
+    elif action == "study_home":
+        lines.append("勉強の息抜きにスマホを開いてつい")
+    elif action == "childcare":
+        lines.append("子供の世話の合間、片手でぽちる")
+    elif action == "housework":
+        lines.append("家事の途中『切らした!』とその場で発注")
+
+    # --- Channel × persona reasoning ---
+    if channel == "Amazon" and aff.get("Amazon", 0) >= 0.80:
+        lines.append("Amazon ヘビーユーザー、迷ったらまずここ")
+    elif channel == "メルカリ" and age <= 35:
+        lines.append("中古や限定品をフリマで探す世代")
+    elif channel == "楽天市場" and age >= 35:
+        lines.append("楽天ポイント還元を狙って週末まとめ買い")
+    elif channel == "Yahoo!ショッピング" and age >= 45:
+        lines.append("PayPayキャンペーンに反応する層")
+    elif channel == "SHEIN" and age <= 22:
+        lines.append("TikTok・YouTube 動画から流入する Z 世代")
+    elif channel == "ZOZOTOWN" and 20 <= age <= 32:
+        lines.append("ファッション特集や別注を欠かさずチェック")
+    elif channel == "BUYMA" and income >= 8_000_000:
+        lines.append("海外ブランド志向 × 関税込み価格を比較")
+    elif channel == "iHerb":
+        lines.append("国内では手に入りにくい品を海外通販で")
+    elif channel == "Apple":
+        lines.append("正規品しか買わないこだわり")
+    elif channel == "Uniqlo online":
+        lines.append("店頭よりサイズ・色が揃うECを選ぶ")
+    elif channel == "MUJI passport":
+        lines.append("週末セールとアプリ会員特典に合わせて")
+    elif channel == "honto":
+        lines.append("書籍は紙派、丸善・ジュンク堂ポイント連携")
+    elif channel == "Yodobashi.com":
+        lines.append("ヨドバシポイント還元 + 翌日配達")
+    elif channel == "Oisix":
+        lines.append("時短調理キットで平日の夕食を回す")
+
+    # --- Personality coloring ---
+    if impulse and t.openness >= 0.7:
+        lines.append("好奇心が背中を押した衝動買い")
+    elif not impulse and t.conscientiousness >= 0.75:
+        lines.append("リストにあった必須品を計画通り消化")
+    elif t.neuroticism >= 0.60 and not impulse:
+        lines.append("使い慣れた SKU でリピート、失敗したくない")
+    if category == "サブスク":
+        lines.append("月次自動更新、判断は1度だけで継続")
+    elif category in ("化粧品", "サプリ"):
+        lines.append("肌・体調のために定期補充")
+    elif category == "アパレル" and impulse:
+        lines.append("シーズン色や流行モチーフに反応")
+    elif category == "電化製品" and t.openness >= 0.65:
+        lines.append("性能比較サイトを読み込んでから")
+
+    # Dedupe and cap
+    seen: set = set()
+    out: list[str] = []
+    for L in lines:
+        if L not in seen:
+            seen.add(L)
+            out.append(L)
+    return out[:3]
 
 
 def _frequency(persona) -> int:
@@ -520,6 +691,7 @@ def generate_purchases(
                   or any(seg["s"] <= minute < seg["e"] and seg["mode"] == "train"
                          for seg in schedule_segments)
         reason = _reason_for(default_reason, action, minute, persona, rng)
+        whys = _why_lines(persona, channel, category, action, minute, impulse)
         purchases.append(Purchase(
             minute=minute,
             channel=channel,
@@ -529,6 +701,7 @@ def generate_purchases(
             impulse=impulse,
             reason=reason,
             trigger_action=action,
+            why_lines=tuple(whys),
         ))
     purchases.sort(key=lambda p: p.minute)
     return purchases

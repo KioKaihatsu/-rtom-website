@@ -13,7 +13,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from cohort_generator import generate_cohort, schedule_template
-from ec_events import generate_purchases
+from ec_events import generate_purchases, personality_blurb, derive_interests
 
 
 # Color by template (visible at small dot size)
@@ -67,6 +67,9 @@ def build(n: int, target_date: date_t, seed: int = 42) -> dict[str, Any]:
         seg_min = [{
             "s": s["s"], "e": s["e"], "a": s["act"], "m": s["mode"],
         } for s in segs_dicts]
+        # Top 3 brand affinities for display
+        top_brands = sorted(t.brand_affinity.items(),
+                            key=lambda x: -x[1])[:3]
         personas_out.append({
             "i": len(personas_out),
             "n": t.name,
@@ -81,6 +84,10 @@ def build(n: int, target_date: date_t, seed: int = 42) -> dict[str, Any]:
                   if t.commute_target_lat is not None else None),
             "c": TEMPLATE_COLOR.get(t.template, "#888"),
             "seg": seg_min,
+            # Rich insight fields
+            "blurb": personality_blurb(p),
+            "interests": derive_interests(p),
+            "brands": [{"name": b, "score": round(s, 2)} for b, s in top_brands],
         })
         for b in buys:
             purchases_out.append({
@@ -93,6 +100,8 @@ def build(n: int, target_date: date_t, seed: int = 42) -> dict[str, Any]:
                 "p":   b.price_jpy,
                 "imp": b.impulse,
                 "why": b.reason,
+                "whys": list(b.why_lines),
+                "act": b.trigger_action,
                 "lat": t.home_lat,
                 "lng": t.home_lng,
             })
@@ -142,12 +151,17 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   html,body{{margin:0;height:100%;background:var(--bg);color:var(--text);
     font:12.5px/1.4 -apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Sans","Yu Gothic UI",sans-serif;
     overflow:hidden}}
-  #app{{display:grid;grid-template-columns:1fr 380px;height:100vh}}
-  #map{{height:100%;background:#0a0e13}}
-  #side{{background:var(--panel);overflow-y:auto;border-left:1px solid var(--line)}}
-  @media (max-width:768px) {{
-    #app{{grid-template-columns:1fr;grid-template-rows:55vh 45vh}}
-    #side{{border-left:0;border-top:1px solid var(--line)}}
+  /* マップ小・ストーリーフィード大 */
+  #app{{display:grid;grid-template-columns:380px 1fr;height:100vh}}
+  #left{{display:flex;flex-direction:column;border-right:1px solid var(--line);
+    background:var(--panel);overflow:hidden}}
+  #map{{flex:0 0 320px;background:#0a0e13;border-bottom:1px solid var(--line)}}
+  #leftMeta{{flex:1;overflow-y:auto;padding-bottom:12px}}
+  #stories{{overflow-y:auto;background:var(--bg);padding:14px 18px}}
+  @media (max-width:900px) {{
+    #app{{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+    #left{{border-right:0;border-bottom:1px solid var(--line);max-height:60vh}}
+    #map{{flex:0 0 240px}}
   }}
   header{{padding:12px 14px;border-bottom:1px solid var(--line);
     position:sticky;top:0;background:var(--panel);z-index:5}}
@@ -209,6 +223,53 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .focus .row .name{{font-weight:700}}
   .focus .row .name small{{color:var(--dim);font-weight:400;margin-left:4px}}
   .focus .row .act{{color:var(--accent);font-size:10px}}
+  /* Story cards */
+  .story{{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin-bottom:14px;
+    animation:storyIn .45s ease-out;
+  }}
+  @keyframes storyIn{{from{{transform:translateY(-4px);opacity:0}}to{{opacity:1}}}}
+  .story .head{{display:grid;grid-template-columns:14px 1fr auto;gap:10px;
+    align-items:start;padding-bottom:8px;border-bottom:1px solid var(--line);
+    margin-bottom:9px}}
+  .story .dot{{width:14px;height:14px;border-radius:50%;margin-top:3px}}
+  .story .who-name{{font-size:14.5px;font-weight:800}}
+  .story .who-name .ages{{color:var(--dim);font-weight:500;font-size:11px;margin-left:6px}}
+  .story .who-meta{{color:var(--dim);font-size:10.5px;margin-top:2px}}
+  .story .when{{text-align:right;color:var(--accent);font:800 14px ui-monospace,monospace;
+    white-space:nowrap}}
+  .story .when small{{display:block;color:var(--dim);font:600 9.5px ui-monospace,monospace}}
+  .story .blurb{{color:var(--text);font-size:11px;padding:6px 0 4px;font-style:italic}}
+  .story .chips{{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}}
+  .story .chip{{font-size:10px;padding:2.5px 8px;border-radius:11px;
+    background:rgba(246,195,80,.10);color:var(--accent);border:1px solid rgba(246,195,80,.25)}}
+  .story .chip.brand{{background:rgba(93,173,226,.10);color:var(--blue);
+    border-color:rgba(93,173,226,.25)}}
+  .story .now{{display:flex;align-items:center;gap:8px;padding:8px 0;
+    border-top:1px dotted rgba(255,255,255,.08);
+    border-bottom:1px dotted rgba(255,255,255,.08)}}
+  .story .now-act{{color:var(--green);font-size:12px;font-weight:700}}
+  .story .now-tag{{color:var(--dim);font-size:10px}}
+  .story .buy-line{{display:grid;grid-template-columns:1fr auto;
+    gap:12px;align-items:start;margin-top:10px}}
+  .story .buy-sku{{font-size:13px;font-weight:700;color:var(--text);line-height:1.45}}
+  .story .buy-meta{{color:var(--dim);font-size:10.5px;margin-top:2px}}
+  .story .buy-meta b{{color:var(--text);font-weight:600}}
+  .story .buy-price{{font:800 16px ui-monospace,monospace;color:var(--accent);
+    white-space:nowrap;text-align:right}}
+  .story .buy-price small{{display:block;color:var(--dim);font:600 9.5px sans-serif;
+    margin-top:2px}}
+  .story .why-title{{font-size:10px;font-weight:700;color:var(--dim);
+    text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px}}
+  .story ul.why{{margin:0;padding:0;list-style:none}}
+  .story ul.why li{{font-size:11.5px;color:var(--text);padding:3px 0 3px 14px;
+    position:relative;line-height:1.5}}
+  .story ul.why li::before{{content:'▸';color:var(--accent);position:absolute;left:0;top:3px}}
+  .story.imp{{border-left:3px solid var(--red);padding-left:13px}}
+  .story .imp-badge{{font-size:9.5px;color:var(--red);font-weight:700;
+    margin-left:6px;padding:1.5px 6px;background:rgba(239,111,108,.12);
+    border-radius:8px;letter-spacing:.05em}}
   /* Persona hover tooltip */
   .leaflet-tooltip.persona-tip{{
     background:rgba(15,20,25,.96) !important;
@@ -235,28 +296,31 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 </head>
 <body>
 <div id="app">
-  <div id="map"></div>
-  <aside id="side">
+  <div id="left">
     <header>
       <h1>関東 N={n_personas}人 ライブ 監視</h1>
       <div class="clock" id="clock">--:--:--</div>
-      <div class="sub" id="subline">{date} ({weekday}) JST · <a href="dashboard.html">📊 集計ダッシュボード</a> · <a href="index.html">👁 12人詳細</a></div>
+      <div class="sub" id="subline">{date} ({weekday}) JST · <a href="dashboard.html">📊 集計</a> · <a href="index.html">👁 12人詳細</a></div>
     </header>
-    <div class="tiles" id="tiles"></div>
-    <div class="legend" id="legend"></div>
-    <div class="charts">
-      <h2>EC 購買 — 時間帯ヒストグラム</h2>
-      <svg class="hist" id="hist" viewBox="0 0 360 44" preserveAspectRatio="none"></svg>
+    <div id="map"></div>
+    <div id="leftMeta">
+      <div class="tiles" id="tiles"></div>
+      <div class="legend" id="legend"></div>
+      <div class="charts">
+        <h2>EC 購買 時間帯</h2>
+        <svg class="hist" id="hist" viewBox="0 0 360 44" preserveAspectRatio="none"></svg>
+      </div>
     </div>
-    <div class="focus" id="focus">
-      <h2>注目の3人（ランダム抽出・10秒ごと更新）</h2>
-      <div id="focusRows"></div>
-    </div>
-    <div class="feed">
-      <h2>💸 直近の EC 購買 <span class="sum" id="feedSum"></span></h2>
-      <div id="feedRows"></div>
-    </div>
-  </aside>
+  </div>
+  <section id="stories">
+    <h2 style="margin:0 0 14px;font-size:13px;color:var(--accent);
+      letter-spacing:.04em;display:flex;justify-content:space-between;
+      align-items:center">
+      <span>💸 購買ストーリー — リアルタイム</span>
+      <span id="storiesSum" style="color:var(--text);font:700 12px ui-monospace,monospace"></span>
+    </h2>
+    <div id="storyList"></div>
+  </section>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -404,18 +468,6 @@ function spawnBurst(lat, lng, price) {{
   ).join('');
 }}
 
-// ===== Focus people (random sample, rotates) =====
-let focusIds = [];
-function rotateFocus() {{
-  focusIds = [];
-  while (focusIds.length < 3) {{
-    const idx = Math.floor(Math.random() * DATA.personas.length);
-    if (!focusIds.includes(idx)) focusIds.push(idx);
-  }}
-}}
-rotateFocus();
-setInterval(rotateFocus, 10000);
-
 const ACT_LABEL = {act_label_js};
 
 function escapeHtml(s) {{
@@ -498,56 +550,79 @@ function update() {{
     document.getElementById('hist').innerHTML = bars + now + labels;
   }}
 
-  // Render feed (newest 7)
+  // Render rich story cards (newest 12)
   const upToNow = DATA.purchases.filter(b => b.m <= minute);
   upToNow.sort((a, z) => z.m - a.m);
-  const wantKeys = upToNow.slice(0, 7).map(b => `${{b.pid}}-${{b.m}}`);
-  const feedRows = document.getElementById('feedRows');
-  // Diff update
-  Array.from(feedRows.children).forEach(c => {{
+  const wantKeys = upToNow.slice(0, 12).map(b => `${{b.pid}}-${{b.m}}`);
+  const storyList = document.getElementById('storyList');
+  // Remove stale
+  Array.from(storyList.children).forEach(c => {{
     if (!wantKeys.includes(c.dataset.key)) c.remove();
   }});
-  upToNow.slice(0, 7).forEach((b, idx) => {{
+  // Add / reorder
+  upToNow.slice(0, 12).forEach((b, idx) => {{
     const key = `${{b.pid}}-${{b.m}}`;
-    let row = feedRows.querySelector(`[data-key="${{key}}"]`);
-    if (!row) {{
+    let card = storyList.querySelector(`[data-key="${{key}}"]`);
+    if (!card) {{
       const p = DATA.personas[b.pid];
-      row = document.createElement('div');
-      row.className = 'feed-row new' + (b.imp ? ' impulse' : '');
-      row.dataset.key = key;
+      const seg = activeSeg(p, minute);
+      const actLabel = ACT_LABEL[b.act] || ACT_LABEL[seg.a] || b.act;
       const hh = String(Math.floor(b.m / 60)).padStart(2, '0');
       const mm = String(b.m % 60).padStart(2, '0');
-      const tag = b.imp ? '💥' : '🛒';
-      const lastName = (p.n.split(' ')[1] || p.n);
-      row.innerHTML = `
-        <div class="time">${{hh}}:${{mm}}</div>
-        <div class="who">
-          <span class="sku">${{tag}} ${{escapeHtml(b.sku)}}</span>
-          <span class="meta"><span style="color:${{p.c}}">●</span> ${{escapeHtml(lastName)}} (${{p.a}}/${{p.o}}/${{p.pref}}) · ${{b.ch}}</span>
-          <span class="why">${{escapeHtml(b.why)}}</span>
+      const genderJP = p.g === 'M' ? '男性' : '女性';
+
+      const interestChips = (p.interests || []).map(x =>
+        `<span class="chip">${{escapeHtml(x)}}</span>`).join('');
+      const brandChips = (p.brands || []).map(x =>
+        `<span class="chip brand">${{escapeHtml(x.name)}} ${{x.score >= 0.85 ? '★★★' : x.score >= 0.7 ? '★★' : '★'}}</span>`).join('');
+      const whys = (b.whys || []).map(L =>
+        `<li>${{escapeHtml(L)}}</li>`).join('');
+
+      const impBadge = b.imp
+        ? `<span class="imp-badge">💥 衝動</span>`
+        : `<span class="imp-badge" style="color:var(--green);background:rgba(93,211,158,.10)">🛒 計画</span>`;
+
+      card = document.createElement('div');
+      card.className = 'story' + (b.imp ? ' imp' : '');
+      card.dataset.key = key;
+      card.innerHTML = `
+        <div class="head">
+          <div class="dot" style="background:${{p.c}}"></div>
+          <div>
+            <div class="who-name">${{escapeHtml(p.n)}}<span class="ages">${{p.a}}歳・${{genderJP}}</span></div>
+            <div class="who-meta">${{escapeHtml(p.o)}} ・ ${{escapeHtml(p.pref)}} ・ 年収 ¥${{p.inc.toLocaleString('ja-JP')}}</div>
+          </div>
+          <div class="when">${{hh}}:${{mm}}<small>${{impBadge}}</small></div>
         </div>
-        <div class="price">¥${{b.p.toLocaleString('ja-JP')}}</div>`;
-      setTimeout(() => row.classList.remove('new'), 600);
+
+        <div class="blurb">"${{escapeHtml(p.blurb || '')}}"</div>
+        <div class="chips">${{interestChips}}</div>
+        <div class="chips">${{brandChips}}</div>
+
+        <div class="now">
+          <span class="now-act">→ ${{actLabel}}</span>
+          <span class="now-tag">の最中に</span>
+        </div>
+
+        <div class="buy-line">
+          <div>
+            <div class="buy-sku">${{escapeHtml(b.sku)}}</div>
+            <div class="buy-meta"><b>${{b.ch}}</b> ・ ${{b.cat}}</div>
+          </div>
+          <div class="buy-price">¥${{b.p.toLocaleString('ja-JP')}}<small>${{b.ch}}</small></div>
+        </div>
+
+        <div class="why-title">💡 なぜこのタイミングで買ったか</div>
+        <ul class="why">${{whys || `<li>${{escapeHtml(b.why || '')}}</li>`}}</ul>
+      `;
     }}
-    if (feedRows.children[idx] !== row) {{
-      feedRows.insertBefore(row, feedRows.children[idx] || null);
+    // Maintain order
+    if (storyList.children[idx] !== card) {{
+      storyList.insertBefore(card, storyList.children[idx] || null);
     }}
   }});
-  document.getElementById('feedSum').textContent =
-    `${{buys}}件 ¥${{spend.toLocaleString('ja-JP')}}`;
-
-  // Render focus
-  document.getElementById('focusRows').innerHTML = focusIds.map(idx => {{
-    const p = DATA.personas[idx];
-    const seg = activeSeg(p, minute);
-    return `<div class="row">
-      <div class="d" style="background:${{p.c}}"></div>
-      <div>
-        <span class="name">${{escapeHtml(p.n)}}<small>${{p.a}}・${{p.o}}・${{escapeHtml(p.pref)}}・¥${{p.inc.toLocaleString('ja-JP')}}/年</small></span><br>
-        <span class="act">${{ACT_LABEL[seg.a] || seg.a}}</span>
-      </div>
-    </div>`;
-  }}).join('');
+  document.getElementById('storiesSum').textContent =
+    `本日 ${{buys}}件 / ¥${{spend.toLocaleString('ja-JP')}}`;
 }}
 
 setInterval(update, 1000);
