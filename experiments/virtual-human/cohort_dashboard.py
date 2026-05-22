@@ -590,6 +590,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, default=Path("out/dashboard.html"))
     ap.add_argument("--json", type=Path, default=None,
                     help="生データ JSON 出力")
+    ap.add_argument("--csv", type=Path, default=None,
+                    help="CSV 出力 (purchases / personas を 2 ファイル生成)")
     args = ap.parse_args()
 
     if args.date:
@@ -620,6 +622,44 @@ def main() -> None:
             encoding="utf-8",
         )
         print(f"  → {args.json}")
+
+    if args.csv:
+        import csv as _csv
+        base = args.csv
+        base.parent.mkdir(parents=True, exist_ok=True)
+        stem = base.with_suffix("")
+        buys_csv = stem.with_name(stem.name + "-purchases.csv")
+        people_csv = stem.with_name(stem.name + "-personas.csv")
+
+        with open(buys_csv, "w", newline="", encoding="utf-8-sig") as f:
+            w = _csv.writer(f)
+            w.writerow(["minute", "hh:mm", "name", "age", "gender",
+                        "occupation", "prefecture", "income_jpy",
+                        "channel", "category", "sku", "price_jpy",
+                        "impulse", "reason"])
+            for b in payload["purchases"]:
+                hh, mm = divmod(b["m"], 60)
+                w.writerow([b["m"], f"{hh:02d}:{mm:02d}",
+                            b["name"], b["age"],
+                            "男" if b["gender"] == "male" else "女",
+                            b["occ"], b["pref"], b["income"],
+                            b["ch"], b["cat"], b["sku"], b["p"],
+                            1 if b["imp"] else 0, b["why"]])
+
+        with open(people_csv, "w", newline="", encoding="utf-8-sig") as f:
+            w = _csv.writer(f)
+            w.writerow(["id", "name", "age", "gender", "occupation",
+                        "prefecture", "lat", "lng", "income_jpy", "wfh",
+                        "n_purchases_today", "spend_today_jpy"])
+            for p in payload["personas"]:
+                w.writerow([p["id"], p["name"], p["age"],
+                            "男" if p["gender"] == "male" else "女",
+                            p["occupation"], p["prefecture"],
+                            p["lat"], p["lng"], p["income"],
+                            1 if p["wfh"] else 0,
+                            p["n_buys"], p["spend"]])
+        print(f"  → {buys_csv}  ({len(payload['purchases'])} rows)")
+        print(f"  → {people_csv}  ({len(payload['personas'])} rows)")
 
 
 if __name__ == "__main__":
