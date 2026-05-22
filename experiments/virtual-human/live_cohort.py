@@ -209,6 +209,28 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .focus .row .name{{font-weight:700}}
   .focus .row .name small{{color:var(--dim);font-weight:400;margin-left:4px}}
   .focus .row .act{{color:var(--accent);font-size:10px}}
+  /* Persona hover tooltip */
+  .leaflet-tooltip.persona-tip{{
+    background:rgba(15,20,25,.96) !important;
+    border:1px solid var(--line) !important;
+    color:var(--text) !important;
+    font:11px/1.5 -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif !important;
+    padding:8px 11px !important;
+    border-radius:8px !important;
+    box-shadow:0 4px 16px rgba(0,0,0,.6) !important;
+    pointer-events:none;
+    min-width:200px;
+  }}
+  .leaflet-tooltip.persona-tip::before{{
+    border-top-color:rgba(15,20,25,.96) !important;
+  }}
+  .leaflet-tooltip.persona-tip .tip-name{{color:var(--accent);font-weight:800;font-size:13px}}
+  .leaflet-tooltip.persona-tip .tip-meta{{color:var(--dim);font-size:10px;margin-top:2px}}
+  .leaflet-tooltip.persona-tip .tip-act{{color:var(--green);font-weight:600;margin-top:4px}}
+  .leaflet-tooltip.persona-tip .tip-act .ico{{font-size:13px}}
+  .leaflet-tooltip.persona-tip .tip-buy{{
+    margin-top:4px;padding-top:4px;border-top:1px dotted var(--line);
+    color:var(--accent);font-size:10px}}
 </style>
 </head>
 <body>
@@ -241,9 +263,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 const DATA = {payload_json};
 
 // ===== Map =====
+// 関東全域が一望できる広めの初期ズーム
 const map = L.map('map', {{zoomControl: true, attributionControl: false,
                            preferCanvas: true}})
-  .setView([35.85, 139.65], 10);
+  .setView([36.10, 139.75], 9);
 L.tileLayer('https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}.png', {{
   subdomains: 'abcd', maxZoom: 19,
   attribution: '© OpenStreetMap, © CARTO',
@@ -251,15 +274,59 @@ L.tileLayer('https://{{s}}.basemaps.cartocdn.com/dark_all/{{z}}/{{x}}/{{y}}{{r}}
 
 const canvas = L.canvas({{padding: 0.3}});
 
+let currentMinute = 0;   // updated each tick — read by tooltip fn
+
+// Tooltip content: looks up the persona's CURRENT segment + last EC purchase.
+const buysByPid = new Map();
+DATA.purchases.forEach(b => {{
+  if (!buysByPid.has(b.pid)) buysByPid.set(b.pid, []);
+  buysByPid.get(b.pid).push(b);
+}});
+
+function makeTooltipHTML(p) {{
+  const seg = activeSeg(p, currentMinute);
+  const act = ACT_LABEL[seg.a] || seg.a;
+  const genderJP = p.g === 'M' ? '男性' : '女性';
+  // Find most recent purchase up to currentMinute (if any)
+  const mine = buysByPid.get(p.i) || [];
+  let lastBuy = null;
+  for (let i = mine.length - 1; i >= 0; i--) {{
+    if (mine[i].m <= currentMinute) {{ lastBuy = mine[i]; break; }}
+  }}
+  let buyLine = '';
+  if (lastBuy) {{
+    const hh = String(Math.floor(lastBuy.m / 60)).padStart(2, '0');
+    const mm = String(lastBuy.m % 60).padStart(2, '0');
+    buyLine = `<div class="tip-buy">💸 ${{hh}}:${{mm}} ${{escapeHtml(lastBuy.sku)}}<br>
+       <span style="color:var(--dim)">${{lastBuy.ch}} · ¥${{lastBuy.p.toLocaleString('ja-JP')}}</span></div>`;
+  }}
+  return `<div>
+    <div class="tip-name">${{escapeHtml(p.n)}} <span style="color:var(--dim);font-size:10px;font-weight:400">${{p.a}}歳 ${{genderJP}}</span></div>
+    <div class="tip-meta">${{escapeHtml(p.o)}} · ${{escapeHtml(p.pref)}}</div>
+    <div class="tip-meta">年収 ¥${{p.inc.toLocaleString('ja-JP')}}</div>
+    <div class="tip-act">→ ${{act}}</div>
+    ${{buyLine}}
+  </div>`;
+}}
+
 // One CircleMarker per persona, rendered on shared canvas for perf
 const personaState = DATA.personas.map(p => {{
   const marker = L.circleMarker(p.h, {{
-    radius: 2.2,
+    radius: 3.5,         // 少し大きめでホバーしやすく
     weight: 0,
     fillColor: p.c,
     fillOpacity: 0.85,
     renderer: canvas,
+    interactive: true,
   }}).addTo(map);
+  // Function-based tooltip: re-evaluated each time it opens (live segment)
+  marker.bindTooltip(() => makeTooltipHTML(p), {{
+    direction: 'top',
+    offset: [0, -4],
+    opacity: 1,
+    className: 'persona-tip',
+    sticky: true,         // follows mouse within marker
+  }});
   return {{p, marker}};
 }});
 
@@ -361,6 +428,7 @@ function escapeHtml(s) {{
 function update() {{
   const tk = tokyoMinutes();
   const minute = tk.minutes;
+  currentMinute = minute;   // expose to tooltip closure
   document.getElementById('clock').textContent = tk.clock + ' JST';
 
   // Counters
