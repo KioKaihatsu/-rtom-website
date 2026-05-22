@@ -158,6 +158,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <header>
   <h1>コホート EC 分析 — N={n_personas} 人 / {date}</h1>
   <div class="sub" id="subline"></div>
+  <div class="sub" style="margin-top:4px"><a href="index.html"
+    style="color:var(--accent);text-decoration:none;font-weight:700">
+    ← 12人ライブ監視に戻る</a></div>
 </header>
 <div class="container">
   <div class="grid">
