@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RIFT SUMMIT 2028 ― League of Legends 大規模イベント 企画書</title>
+<meta name="description" content="2028年、大型ホールで開催するLeague of Legends公式級ファン・競技イベント「RIFT SUMMIT 2028」の企画書。コンセプト・開催概要・収支計画・実施体制・スケジュールまでを網羅した提案資料。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@300;400;500;700;900&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0E14;
+  --bg-2:#0F141E;
+  --panel:#121925;
+  --panel-2:#161F2E;
+  --line:rgba(200,170,110,0.18);
+  --line-soft:rgba(255,255,255,0.07);
+  --gold:#C8AA6E;
+  --gold-bright:#F0E6D2;
+  --gold-deep:#785A28;
+  --teal:#0AC8B9;
+  --teal-deep:#0397AB;
+  --blue:#3C89D0;
+  --magenta:#C03B6F;
+  --text:#E6E9EF;
+  --text-soft:#9AA6B8;
+  --text-faint:#5E6B7D;
+  --good:#2ECC71;
+  --warn:#E8B23A;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Noto Sans JP','Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.8;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block;}
+a{color:inherit;text-decoration:none;}
+
+/* ====== HEXTECH BACKGROUND TEXTURE ====== */
+.bg-grid{
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(200,170,110,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200,170,110,0.04) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(circle at 50% 0%, rgba(0,0,0,0.6), transparent 80%);
+}
+
+/* ====== TOP PROGRESS / NAV ====== */
+.docnav{
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 clamp(1rem,4vw,3rem); height:60px;
+  background:rgba(10,14,20,0.82);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.docnav .brand{
+  font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.16em;
+  font-size:0.92rem; color:var(--gold-bright);
+  display:flex; align-items:center; gap:0.6rem;
+}
+.docnav .brand b{ color:var(--gold); }
+.docnav .lozenge{
+  width:18px; height:18px; transform:rotate(45deg);
+  border:1.5px solid var(--gold);
+  box-shadow:inset 0 0 0 3px rgba(200,170,110,0.25);
+}
+.docnav-links{ display:flex; gap:1.4rem; }
+.docnav-links a{
+  font-size:0.72rem; letter-spacing:0.08em; color:var(--text-soft);
+  transition:color 0.2s; text-transform:uppercase;
+}
+.docnav-links a:hover{ color:var(--gold); }
+.progress{ position:fixed; top:60px; left:0; height:2px; z-index:101;
+  background:linear-gradient(90deg,var(--teal),var(--gold)); width:0%; }
+@media(max-width:880px){ .docnav-links{ display:none; } }
+
+/* ====== LAYOUT ====== */
+.wrap{ position:relative; z-index:1; max-width:1120px; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.5rem); }
+section{ padding:clamp(3.5rem,7vw,6rem) 0; position:relative; z-index:1; }
+.kicker{
+  font-family:'Inter',sans-serif; font-size:0.7rem; font-weight:700;
+  letter-spacing:0.34em; text-transform:uppercase; color:var(--teal);
+  display:flex; align-items:center; gap:0.7rem; margin-bottom:1rem;
+}
+.kicker::before{ content:''; width:34px; height:1px; background:var(--teal); opacity:0.7; }
+.sec-no{ color:var(--gold); font-family:'Inter',sans-serif; font-weight:800; }
+h2.sec-title{
+  font-family:'Inter','Noto Sans JP',sans-serif; font-weight:800;
+  font-size:clamp(1.5rem,3.4vw,2.4rem); line-height:1.25; letter-spacing:-0.01em;
+  color:var(--gold-bright); margin-bottom:0.9rem;
+}
+.sec-lead{ color:var(--text-soft); max-width:760px; font-size:0.96rem; }
+
+/* ====== COVER / HERO ====== */
+.cover{
+  min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+  padding:6rem clamp(1.1rem,4vw,2.5rem) 4rem; position:relative; overflow:hidden;
+}
+.cover::before{
+  content:''; position:absolute; inset:0; z-index:0;
+  background:
+    radial-gradient(900px 520px at 78% 18%, rgba(10,200,185,0.16), transparent 60%),
+    radial-gradient(820px 600px at 8% 86%, rgba(200,170,110,0.14), transparent 60%),
+    linear-gradient(180deg,#070A0F 0%, var(--bg) 100%);
+}
+.cover-inner{ position:relative; z-index:2; max-width:1120px; margin:0 auto; width:100%; }
+.cover-tag{
+  display:inline-flex; align-items:center; gap:0.6rem;
+  border:1px solid var(--line); border-radius:999px;
+  padding:0.4rem 1rem; font-size:0.7rem; letter-spacing:0.22em;
+  text-transform:uppercase; color:var(--gold); margin-bottom:1.8rem;
+  background:rgba(200,170,110,0.05);
+}
+.cover-tag .dot{ width:7px; height:7px; border-radius:50%; background:var(--teal); box-shadow:0 0 10px var(--teal); }
+.cover h1{
+  font-family:'Cinzel',serif; font-weight:800;
+  font-size:clamp(2.6rem,8.5vw,6.6rem); line-height:0.98; letter-spacing:0.02em;
+  color:var(--gold-bright);
+  text-shadow:0 0 50px rgba(200,170,110,0.25);
+}
+.cover h1 .yr{
+  display:block;
+  background:linear-gradient(120deg,var(--teal) 0%, var(--gold) 55%, var(--gold-bright) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.cover .sub-jp{
+  font-family:'Noto Sans JP',sans-serif; font-weight:500;
+  font-size:clamp(1rem,2.4vw,1.45rem); color:var(--text); margin-top:1.4rem; letter-spacing:0.04em;
+}
+.cover .sub-en{ color:var(--text-faint); font-size:0.85rem; letter-spacing:0.18em; text-transform:uppercase; margin-top:0.5rem; }
+.cover-meta{
+  display:flex; flex-wrap:wrap; gap:2.4rem; margin-top:3rem;
+  padding-top:2rem; border-top:1px solid var(--line);
+}
+.cover-meta .m .l{ font-size:0.66rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-faint); }
+.cover-meta .m .v{ font-family:'Inter',sans-serif; font-weight:700; font-size:1.05rem; color:var(--gold-bright); margin-top:0.3rem; }
+.cover-doc{ position:absolute; right:clamp(1.1rem,4vw,2.5rem); bottom:2rem; z-index:2;
+  text-align:right; color:var(--text-faint); font-size:0.7rem; letter-spacing:0.14em; line-height:1.9; }
+
+/* ====== STAT STRIP ====== */
+.statstrip{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+  background:var(--line-soft); border:1px solid var(--line);
+  border-radius:14px; overflow:hidden; margin-top:2.6rem;
+}
+.statstrip .s{ background:var(--panel); padding:1.6rem 1.3rem; }
+.statstrip .num{
+  font-family:'Inter',sans-serif; font-weight:800; font-size:clamp(1.5rem,3.4vw,2.3rem);
+  color:var(--gold-bright); line-height:1; letter-spacing:-0.01em;
+}
+.statstrip .num small{ font-size:0.9rem; color:var(--gold); font-weight:700; margin-left:0.15rem; }
+.statstrip .cap{ font-size:0.74rem; color:var(--text-soft); margin-top:0.55rem; }
+@media(max-width:760px){ .statstrip{ grid-template-columns:repeat(2,1fr); } }
+
+/* ====== CARDS ====== */
+.grid{ display:grid; gap:1.1rem; }
+.g2{ grid-template-columns:repeat(2,1fr); }
+.g3{ grid-template-columns:repeat(3,1fr); }
+.g4{ grid-template-columns:repeat(4,1fr); }
+@media(max-width:880px){ .g3,.g4{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:620px){ .g2,.g3,.g4{ grid-template-columns:1fr; } }
+.card{
+  background:linear-gradient(180deg,var(--panel) 0%, var(--bg-2) 100%);
+  border:1px solid var(--line-soft); border-radius:14px; padding:1.5rem 1.4rem;
+  transition:border-color 0.25s, transform 0.25s;
+}
+.card:hover{ border-color:var(--line); transform:translateY(-3px); }
+.card .ic{
+  width:42px; height:42px; border-radius:10px; display:grid; place-items:center;
+  background:rgba(200,170,110,0.1); border:1px solid var(--line);
+  font-size:1.2rem; margin-bottom:0.9rem;
+}
+.card h3{ font-size:1.02rem; font-weight:700; color:var(--gold-bright); margin-bottom:0.5rem; }
+.card p{ font-size:0.86rem; color:var(--text-soft); }
+.card .tagrow{ margin-top:0.9rem; display:flex; gap:0.4rem; flex-wrap:wrap; }
+.pill{
+  font-size:0.66rem; letter-spacing:0.04em; padding:0.2rem 0.65rem; border-radius:999px;
+  background:rgba(10,200,185,0.1); color:var(--teal); border:1px solid rgba(10,200,185,0.25);
+}
+.pill.g{ background:rgba(200,170,110,0.1); color:var(--gold); border-color:var(--line); }
+
+/* ====== INFO TABLE (overview) ====== */
+.spec{
+  border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel);
+}
+.spec .row{ display:grid; grid-template-columns:200px 1fr; border-bottom:1px solid var(--line-soft); }
+.spec .row:last-child{ border-bottom:none; }
+.spec .row .k{
+  background:var(--panel-2); padding:1rem 1.3rem; font-size:0.8rem; font-weight:700;
+  color:var(--gold); letter-spacing:0.04em; border-right:1px solid var(--line-soft);
+}
+.spec .row .v{ padding:1rem 1.3rem; font-size:0.9rem; color:var(--text); }
+.spec .row .v small{ color:var(--text-faint); }
+@media(max-width:620px){ .spec .row{ grid-template-columns:1fr; } .spec .row .k{ border-right:none; } }
+
+/* ====== TIMELINE (program) ====== */
+.day-head{
+  display:flex; align-items:center; gap:0.9rem; margin:2.2rem 0 1.1rem; flex-wrap:wrap;
+}
+.day-badge{
+  font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.1em;
+  border:1px solid var(--gold); color:var(--gold-bright); border-radius:8px;
+  padding:0.35rem 0.9rem; font-size:0.85rem; background:rgba(200,170,110,0.07);
+}
+.day-head .dt{ font-size:0.82rem; color:var(--text-soft); }
+.tl{ border-left:2px solid var(--line); margin-left:0.4rem; }
+.tl .item{ position:relative; padding:0.55rem 0 0.55rem 1.6rem; }
+.tl .item::before{
+  content:''; position:absolute; left:-7px; top:1.1rem; width:12px; height:12px;
+  transform:rotate(45deg); background:var(--bg); border:2px solid var(--teal);
+}
+.tl .item.key::before{ border-color:var(--gold); background:var(--gold); box-shadow:0 0 12px rgba(200,170,110,0.6); }
+.tl .item .t{ font-family:'Inter',sans-serif; font-weight:700; font-size:0.8rem; color:var(--teal); letter-spacing:0.04em; }
+.tl .item.key .t{ color:var(--gold); }
+.tl .item .h{ font-size:0.95rem; font-weight:600; color:var(--text); margin-top:0.1rem; }
+.tl .item .d{ font-size:0.8rem; color:var(--text-faint); }
+
+/* ====== ZONE MAP ====== */
+.zone{ display:flex; gap:0.9rem; align-items:flex-start; padding:1rem 0; border-bottom:1px solid var(--line-soft); }
+.zone:last-child{ border-bottom:none; }
+.zone .n{
+  font-family:'Inter',sans-serif; font-weight:800; font-size:0.85rem; color:var(--bg);
+  background:var(--gold); width:30px; height:30px; border-radius:8px; display:grid; place-items:center; flex:none;
+}
+.zone .body h4{ font-size:0.95rem; color:var(--gold-bright); margin-bottom:0.15rem; }
+.zone .body p{ font-size:0.84rem; color:var(--text-soft); }
+
+/* ====== SPONSOR TIERS ====== */
+.tier{
+  border:1px solid var(--line-soft); border-radius:16px; padding:1.6rem 1.5rem; background:var(--panel);
+  display:flex; flex-direction:column; position:relative; overflow:hidden;
+}
+.tier::before{ content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.tier.t1::before{ background:linear-gradient(90deg,var(--gold-bright),var(--gold)); }
+.tier.t2::before{ background:linear-gradient(90deg,#D8D8E0,#9AA6B8); }
+.tier.t3::before{ background:linear-gradient(90deg,#C8895A,#785A28); }
+.tier.t4::before{ background:linear-gradient(90deg,var(--teal),var(--teal-deep)); }
+.tier .tname{ font-family:'Cinzel',serif; font-weight:700; letter-spacing:0.08em; font-size:1.1rem; color:var(--gold-bright); }
+.tier .price{ font-family:'Inter',sans-serif; font-weight:800; font-size:1.7rem; color:var(--text); margin:0.6rem 0 0.2rem; }
+.tier .price small{ font-size:0.8rem; color:var(--text-faint); font-weight:500; }
+.tier .slots{ font-size:0.72rem; color:var(--teal); letter-spacing:0.06em; margin-bottom:1rem; }
+.tier ul{ list-style:none; display:flex; flex-direction:column; gap:0.5rem; margin-top:0.3rem; }
+.tier ul li{ font-size:0.82rem; color:var(--text-soft); padding-left:1.3rem; position:relative; }
+.tier ul li::before{ content:'◆'; position:absolute; left:0; color:var(--gold); font-size:0.6rem; top:0.35rem; }
+
+/* ====== BUDGET TABLE ====== */
+.btable{ width:100%; border-collapse:collapse; font-size:0.86rem; }
+.btable th, .btable td{ padding:0.75rem 1rem; text-align:left; border-bottom:1px solid var(--line-soft); }
+.btable thead th{
+  font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--gold);
+  border-bottom:1px solid var(--line); background:var(--panel-2);
+}
+.btable td.num, .btable th.num{ text-align:right; font-family:'Inter',sans-serif; font-variant-numeric:tabular-nums; }
+.btable tbody tr:hover{ background:rgba(255,255,255,0.02); }
+.btable .grp{ color:var(--gold-bright); font-weight:700; background:rgba(200,170,110,0.05); }
+.btable tfoot td{ font-weight:800; color:var(--gold-bright); border-top:2px solid var(--line); font-size:0.95rem; }
+.btable td .mute{ color:var(--text-faint); font-size:0.78rem; }
+.tablescroll{ overflow-x:auto; border:1px solid var(--line); border-radius:14px; }
+.balance{
+  display:flex; flex-wrap:wrap; gap:1rem; margin-top:1.4rem;
+}
+.balance .b{
+  flex:1; min-width:200px; border:1px solid var(--line-soft); border-radius:12px; padding:1.2rem 1.3rem; background:var(--panel);
+}
+.balance .b .l{ font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-faint); }
+.balance .b .v{ font-family:'Inter',sans-serif; font-weight:800; font-size:1.5rem; margin-top:0.4rem; }
+.balance .b.rev .v{ color:var(--teal); }
+.balance .b.cost .v{ color:var(--gold); }
+.balance .b.prof .v{ color:var(--good); }
+
+/* ====== ROADMAP ====== */
+.road{ display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--line-soft);
+  border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+.road .ph{ background:var(--panel); padding:1.3rem 1.2rem; }
+.road .ph .q{ font-family:'Inter',sans-serif; font-weight:800; color:var(--gold); font-size:0.78rem; letter-spacing:0.08em; }
+.road .ph .when{ font-size:0.72rem; color:var(--text-faint); margin-bottom:0.7rem; }
+.road .ph ul{ list-style:none; display:flex; flex-direction:column; gap:0.4rem; }
+.road .ph ul li{ font-size:0.78rem; color:var(--text-soft); padding-left:0.9rem; position:relative; }
+.road .ph ul li::before{ content:''; position:absolute; left:0; top:0.6rem; width:5px; height:5px; background:var(--teal); transform:rotate(45deg); }
+@media(max-width:980px){ .road{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:560px){ .road{ grid-template-columns:1fr; } }
+
+/* ====== ORG / RISK lists ====== */
+.split{ display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; }
+@media(max-width:760px){ .split{ grid-template-columns:1fr; } }
+.risk{ display:flex; gap:1rem; padding:1rem 0; border-bottom:1px solid var(--line-soft); }
+.risk:last-child{ border-bottom:none; }
+.risk .lvl{ font-size:0.64rem; font-weight:700; letter-spacing:0.08em; padding:0.25rem 0.55rem; border-radius:6px; height:fit-content; flex:none; }
+.risk .lvl.h{ background:rgba(192,59,111,0.15); color:#E879A8; border:1px solid rgba(192,59,111,0.4); }
+.risk .lvl.m{ background:rgba(232,178,58,0.13); color:var(--warn); border:1px solid rgba(232,178,58,0.35); }
+.risk .lvl.l{ background:rgba(46,204,113,0.12); color:var(--good); border:1px solid rgba(46,204,113,0.3); }
+.risk .body h4{ font-size:0.9rem; color:var(--text); margin-bottom:0.15rem; }
+.risk .body p{ font-size:0.82rem; color:var(--text-soft); }
+
+/* ====== KPI ====== */
+.kpi{ text-align:center; }
+.kpi .big{ font-family:'Inter',sans-serif; font-weight:800; font-size:2rem; color:var(--gold-bright); }
+.kpi .big small{ font-size:1rem; color:var(--gold); }
+.kpi .lab{ font-size:0.78rem; color:var(--text-soft); margin-top:0.3rem; }
+
+/* ====== CTA / CLOSE ====== */
+.close{
+  text-align:center; border:1px solid var(--line); border-radius:20px;
+  padding:clamp(2.5rem,6vw,4.5rem) 1.5rem;
+  background:radial-gradient(700px 400px at 50% 0%, rgba(200,170,110,0.1), transparent 70%), var(--panel);
+}
+.close h2{ font-family:'Cinzel',serif; font-weight:700; color:var(--gold-bright); font-size:clamp(1.6rem,4vw,2.6rem); letter-spacing:0.04em; }
+.close p{ color:var(--text-soft); max-width:620px; margin:1rem auto 2rem; font-size:0.95rem; }
+.btn{
+  display:inline-flex; align-items:center; gap:0.6rem; font-family:'Inter',sans-serif; font-weight:700;
+  font-size:0.82rem; letter-spacing:0.08em; padding:0.9rem 2rem; border-radius:999px;
+  background:linear-gradient(120deg,var(--gold),var(--gold-deep)); color:#16100A; border:none; cursor:pointer;
+  transition:transform 0.2s, box-shadow 0.2s;
+}
+.btn:hover{ transform:translateY(-2px); box-shadow:0 14px 34px rgba(200,170,110,0.3); }
+.btn.ghost{ background:transparent; color:var(--gold); border:1px solid var(--gold); }
+
+/* ====== FOOTER ====== */
+footer{ border-top:1px solid var(--line); padding:2.5rem 0 3rem; position:relative; z-index:1; }
+.foot{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; }
+.foot .b{ font-family:'Cinzel',serif; letter-spacing:0.14em; color:var(--gold); }
+.foot small{ color:var(--text-faint); font-size:0.74rem; letter-spacing:0.04em; }
+
+/* divider ornament */
+.orn{ display:flex; align-items:center; justify-content:center; gap:0.8rem; color:var(--gold); opacity:0.5; margin:0.5rem 0 0; }
+.orn span{ width:60px; height:1px; background:var(--gold); }
+.orn b{ transform:rotate(45deg); width:8px; height:8px; border:1px solid var(--gold); display:inline-block; }
+
+.note{ font-size:0.74rem; color:var(--text-faint); margin-top:1rem; line-height:1.7; }
+
+/* reveal */
+.reveal{ opacity:0; transform:translateY(22px); transition:opacity 0.7s ease, transform 0.7s ease; }
+.reveal.in{ opacity:1; transform:none; }
+@media(prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; transition:none; } }
+
+@media print{
+  .docnav,.progress,.bg-grid,.btn{ display:none !important; }
+  body{ background:#fff; color:#111; }
+  .reveal{ opacity:1; transform:none; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="progress" id="progress"></div>
+
+<!-- DOC NAV -->
+<nav class="docnav">
+  <a href="#cover" class="brand"><span class="lozenge"></span> RIFT <b>SUMMIT</b> 2028</a>
+  <div class="docnav-links">
+    <a href="#overview">概要</a>
+    <a href="#concept">コンセプト</a>
+    <a href="#program">プログラム</a>
+    <a href="#sponsor">協賛</a>
+    <a href="#budget">収支</a>
+    <a href="#roadmap">進行</a>
+  </div>
+</nav>
+
+<!-- ===== COVER ===== -->
+<header class="cover" id="cover">
+  <div class="cover-inner">
+    <span class="cover-tag"><span class="dot"></span> Event Proposal / 企画書 ・ Ver 1.0</span>
+    <h1>RIFT SUMMIT<span class="yr">2028</span></h1>
+    <p class="sub-jp">League of Legends ― 国内最大級の競技 × ファンフェスティバル</p>
+    <p class="sub-en">A Two-Day Arena Experience for the Summoners</p>
+
+    <div class="cover-meta">
+      <div class="m"><div class="l">開催時期</div><div class="v">2028年 8月（2日間）</div></div>
+      <div class="m"><div class="l">会場</div><div class="v">大型多目的ホール / アリーナ</div></div>
+      <div class="m"><div class="l">想定動員</div><div class="v">2日間 計 18,000名</div></div>
+      <div class="m"><div class="l">想定配信視聴</div><div class="v">ピーク同時 30万超</div></div>
+    </div>
+  </div>
+  <div class="cover-doc">
+    企画・主催：RtoM Entertainment Lab<br>
+    DOCUMENT — CONFIDENTIAL<br>
+    Issued 2026.06
+  </div>
+</header>
+
+<!-- ===== 01 EXECUTIVE SUMMARY ===== -->
+<section id="summary">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">01</span> Executive Summary</div>
+      <h2 class="sec-title">企画概要 ― なぜ、いま大型ホールなのか</h2>
+      <p class="sec-lead">
+        『League of Legends（LoL）』は世界で最もプレイヤー数の多いPC競技タイトルの一つであり、esportsの中核を担い続けています。
+        本企画「RIFT SUMMIT 2028」は、トップ選手による公式級トーナメントと、来場者が一日中遊べるファン体験を一つの大型ホールに集約した、
+        国内最大級の「観る × 遊ぶ × つながる」フェスティバルです。配信だけでは得られない“同じ空間で熱狂を共有する体験”を核に、
+        来場・配信・スポンサーの三層から収益を設計し、単年黒字と継続開催の両立を目指します。
+      </p>
+    </div>
+
+    <div class="statstrip reveal">
+      <div class="s"><div class="num">2<small>日間</small></div><div class="cap">週末を使ったフルスケール開催</div></div>
+      <div class="s"><div class="num">18,000<small>名</small></div><div class="cap">2日合計の想定来場者数</div></div>
+      <div class="s"><div class="num">¥9,800<small>万</small></div><div class="cap">想定総収入（協賛・チケット等）</div></div>
+      <div class="s"><div class="num">+¥1,300<small>万</small></div><div class="cap">想定営業利益（黒字計画）</div></div>
+    </div>
+
+    <div class="grid g3 reveal" style="margin-top:1.4rem;">
+      <div class="card">
+        <div class="ic">🏆</div>
+        <h3>魅せる競技</h3>
+        <p>招待制トーナメントとアマチュア全国大会の二本立て。プロの頂上決戦と“自分ごと”の参加体験を同居させます。</p>
+      </div>
+      <div class="card">
+        <div class="ic">🎪</div>
+        <h3>遊べるホール</h3>
+        <p>試合のない時間も退屈させない。体験ブース、コスプレ、物販、フォトスポットで滞在時間と単価を最大化します。</p>
+      </div>
+      <div class="card">
+        <div class="ic">📡</div>
+        <h3>広がる配信</h3>
+        <p>会場の熱量をそのまま全世界へ。多言語配信とSNS設計で、来場の数十倍のリーチを獲得します。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 02 BACKGROUND / MARKET ===== -->
+<section id="background" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">02</span> Background &amp; Market</div>
+      <h2 class="sec-title">開催背景と市場機会</h2>
+      <p class="sec-lead">
+        esports市場は世界・国内ともに拡大を続け、観戦は「画面の前」から「現地での体験」へと拡張しています。
+        LoLは長期にわたり高いアクティブユーザーとコミュニティ熱量を維持しており、リアルイベントとの親和性が極めて高いタイトルです。
+      </p>
+    </div>
+    <div class="grid g4 reveal" style="margin-top:1.8rem;">
+      <div class="card">
+        <div class="ic">📈</div>
+        <h3>拡大する市場</h3>
+        <p>国内esports市場は年々成長。スポンサー投資と動画視聴が牽引し、リアル開催の受け皿需要が高まっています。</p>
+      </div>
+      <div class="card">
+        <div class="ic">🌐</div>
+        <h3>強いIP</h3>
+        <p>LoLは世界規模のリーグと豊富なキャラクター資産を持ち、ファンの帰属意識が高い長寿タイトルです。</p>
+      </div>
+      <div class="card">
+        <div class="ic">🧑‍🤝‍🧑</div>
+        <h3>体験への渇望</h3>
+        <p>コロナ後、現地観戦・オフ会需要が回復。「会って応援したい」層が大型会場を求めています。</p>
+      </div>
+      <div class="card">
+        <div class="ic">💴</div>
+        <h3>多層の収益</h3>
+        <p>協賛・チケット・物販・配信権・飲食と、収益源を分散できるため単一依存リスクが小さい構造です。</p>
+      </div>
+    </div>
+    <p class="note reveal">
+      ※ 市場規模・成長率の具体数値は、実施判断フェーズで最新の業界レポート（国内esports白書 等）に基づき確定・更新します。本書では構造的な機会のみを提示します。
+    </p>
+  </div>
+</section>
+
+<!-- ===== 03 CONCEPT ===== -->
+<section id="concept">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">03</span> Concept</div>
+      <h2 class="sec-title">コンセプト ― 「峡谷が、街にやってくる。」</h2>
+      <p class="sec-lead">
+        画面の中の「サモナーズリフト」を、現実のホールに召喚する。観戦者・プレイヤー・配信者・コスプレイヤー、
+        あらゆる関わり方の人が“自分の居場所”を見つけられる二日間。勝敗の物語と、その世界を愛する人々の祝祭を、一つ屋根の下で。
+      </p>
+    </div>
+    <div class="orn reveal" style="justify-content:flex-start; margin:1.6rem 0 2rem;"><span></span><b></b></div>
+    <div class="grid g3 reveal">
+      <div class="card">
+        <div class="ic">⚔️</div>
+        <h3>Compete ― 競う</h3>
+        <p>頂点を決める招待制大会と、誰もが挑戦できるアマチュア大会。観るだけでなく「立つ」舞台を用意します。</p>
+        <div class="tagrow"><span class="pill g">プロ</span><span class="pill">アマチュア</span></div>
+      </div>
+      <div class="card">
+        <div class="ic">✨</div>
+        <h3>Celebrate ― 祝う</h3>
+        <p>ステージライブ、コスプレ、ファンアート展示。タイトルへの愛を表現し、称え合う場を演出します。</p>
+        <div class="tagrow"><span class="pill g">ライブ</span><span class="pill">コスプレ</span></div>
+      </div>
+      <div class="card">
+        <div class="ic">🤝</div>
+        <h3>Connect ― つながる</h3>
+        <p>交流ラウンジ、フリープレイ、サイン会。オンラインの仲間とリアルで出会える接点を最大化します。</p>
+        <div class="tagrow"><span class="pill g">交流</span><span class="pill">体験</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 04 OVERVIEW ===== -->
+<section id="overview" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">04</span> Overview</div>
+      <h2 class="sec-title">開催概要</h2>
+    </div>
+    <div class="spec reveal" style="margin-top:1.4rem;">
+      <div class="row"><div class="k">イベント名称</div><div class="v">RIFT SUMMIT 2028 ／ リフトサミット 2028</div></div>
+      <div class="row"><div class="k">開催日</div><div class="v">2028年8月某週の土・日（2日間）<small>　※会場・選手日程の確定後に最終決定</small></div></div>
+      <div class="row"><div class="k">会場</div><div class="v">大型多目的ホール／アリーナ（収容1万人規模・首都圏想定）<small>　例：幕張・有明・さいたま 等の同等施設</small></div></div>
+      <div class="row"><div class="k">主催</div><div class="v">RtoM Entertainment Lab（実行委員会形式）</div></div>
+      <div class="row"><div class="k">想定来場者</div><div class="v">2日間合計 18,000名（DAY1：8,000 ／ DAY2：10,000）</div></div>
+      <div class="row"><div class="k">開催形態</div><div class="v">トーナメント観戦 ＋ ファン体験エキスポ ＋ ステージプログラムの複合型</div></div>
+      <div class="row"><div class="k">入場</div><div class="v">前売チケット制（1日券／2日通し券／VIPシート）＋ 体験ブースは一部有料</div></div>
+      <div class="row"><div class="k">配信</div><div class="v">主要配信プラットフォームでの無料ライブ配信（日本語・英語）</div></div>
+      <div class="row"><div class="k">権利関係</div><div class="v">タイトルの大会・興行に必要なライセンス／許諾を取得のうえ実施<small>　※ コミュニティ大会ガイドライン準拠を前提</small></div></div>
+    </div>
+    <p class="note reveal">
+      ※ 本企画はファン・コミュニティ主導の大規模興行を想定しています。実施にあたっては、権利元が定める大会運営・配信ガイドラインへの準拠、必要な許諾取得を前提条件とします。
+    </p>
+  </div>
+</section>
+
+<!-- ===== 05 TARGET ===== -->
+<section id="target">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">05</span> Target Audience</div>
+      <h2 class="sec-title">ターゲットと想定来場者</h2>
+      <p class="sec-lead">中心は10代後半〜30代のアクティブプレイヤー／視聴者。観戦目的だけでなく、「体験」「交流」「推し活」を求める層まで幅広く取り込みます。</p>
+    </div>
+    <div class="grid g4 reveal" style="margin-top:1.8rem;">
+      <div class="card">
+        <div class="ic">🎮</div>
+        <h3>コアプレイヤー</h3>
+        <p>日常的にプレイし、メタや選手を熟知。トーナメントとアマチュア大会の主力参加・観戦層。</p>
+        <div class="tagrow"><span class="pill">18–34歳</span></div>
+      </div>
+      <div class="card">
+        <div class="ic">📺</div>
+        <h3>配信ファン</h3>
+        <p>普段は配信視聴が中心。推し選手・ストリーマーに会うために来場する“現地化”層。</p>
+        <div class="tagrow"><span class="pill">推し活</span></div>
+      </div>
+      <div class="card">
+        <div class="ic">🎭</div>
+        <h3>カルチャー層</h3>
+        <p>コスプレ・ファンアート・グッズが目的。世界観への愛着が深く、SNS発信力が高い。</p>
+        <div class="tagrow"><span class="pill">発信力◎</span></div>
+      </div>
+      <div class="card">
+        <div class="ic">👨‍👩‍👧</div>
+        <h3>ライト／同伴層</h3>
+        <p>友人・家族と来場。体験ブースや飲食を楽しむ。新規ファン獲得の入口となる層。</p>
+        <div class="tagrow"><span class="pill">新規導線</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 06 VENUE / ZONES ===== -->
+<section id="venue" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">06</span> Venue Layout</div>
+      <h2 class="sec-title">会場構成 ― ホールを7つのゾーンへ</h2>
+      <p class="sec-lead">メインアリーナを観戦の中心に据えつつ、ホワイエ・サブホールを体験ゾーンとして開放。
+        来場者が一日を通して回遊し、滞在時間と消費を最大化する動線を設計します。</p>
+    </div>
+    <div class="split reveal" style="margin-top:1.8rem; align-items:start;">
+      <div class="card" style="padding:1.6rem 1.5rem;">
+        <div class="zone"><div class="n">1</div><div class="body"><h4>メインステージ・アリーナ</h4><p>大型LEDと観客席。トーナメント本戦・表彰式・ライブの中枢。最大1万席規模。</p></div></div>
+        <div class="zone"><div class="n">2</div><div class="body"><h4>サブステージ</h4><p>アマチュア大会・トークショー・解説アーカイブ。常時何かが動いている第2の核。</p></div></div>
+        <div class="zone"><div class="n">3</div><div class="body"><h4>体験 / フリープレイゾーン</h4><p>最新環境の試遊台、新モード体験、対戦コーナー。来場者が“自分でプレイ”できる場。</p></div></div>
+        <div class="zone"><div class="n">4</div><div class="body"><h4>協賛・出展ブース</h4><p>ゲーミングデバイス、PC、飲料等のスポンサーブース。体験型出展を推奨。</p></div></div>
+      </div>
+      <div class="card" style="padding:1.6rem 1.5rem;">
+        <div class="zone"><div class="n">5</div><div class="body"><h4>オフィシャル物販エリア</h4><p>限定グッズ・コラボ商品。整理券／事前予約で混雑を制御し購入体験を保護。</p></div></div>
+        <div class="zone"><div class="n">6</div><div class="body"><h4>コスプレ &amp; フォトゾーン</h4><p>更衣室、世界観セット、撮影スポット。SNS拡散を生むカルチャーの拠点。</p></div></div>
+        <div class="zone"><div class="n">7</div><div class="body"><h4>飲食 / 交流ラウンジ</h4><p>キッチンカー・コラボカフェ・休憩。長時間滞在を支え、客単価を底上げ。</p></div></div>
+        <div class="zone"><div class="n">＋</div><div class="body"><h4>運営・配信バックヤード</h4><p>選手控室、配信スタジオ、メディアブース、本部。安全・進行を支える非公開エリア。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 07 PROGRAM ===== -->
+<section id="program">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">07</span> Program</div>
+      <h2 class="sec-title">プログラム・タイムテーブル（案）</h2>
+      <p class="sec-lead">DAY1は予選・アマチュア大会・体験で会場を温め、DAY2を決勝・ライブ・表彰のクライマックスへ。二日間で起伏のある物語を設計します。</p>
+    </div>
+
+    <div class="reveal">
+      <div class="day-head">
+        <span class="day-badge">DAY 1</span>
+        <span class="dt">予選 ＆ コミュニティの日 ／ 10:00 – 19:00</span>
+      </div>
+      <div class="tl">
+        <div class="item"><div class="t">10:00</div><div class="h">開場・オープニングセレモニー</div><div class="d">主催挨拶、二日間のハイライト紹介</div></div>
+        <div class="item"><div class="t">10:30</div><div class="h">アマチュア全国大会 本戦</div><div class="d">サブステージで並行進行、解説付き配信</div></div>
+        <div class="item key"><div class="t">13:00</div><div class="h">招待トーナメント グループステージ</div><div class="d">メインアリーナ。注目チームの初戦</div></div>
+        <div class="item"><div class="t">15:00</div><div class="h">選手・ストリーマー トークステージ</div><div class="d">サイン会／質問コーナー／撮影会</div></div>
+        <div class="item"><div class="t">17:00</div><div class="h">アマチュア決勝・表彰</div><div class="d">“自分ごと”の感動を共有</div></div>
+        <div class="item key"><div class="t">18:00</div><div class="h">DAY1 ベストマッチ・ナイトセッション</div><div class="d">勝ち上がりチームによる準々決勝</div></div>
+      </div>
+    </div>
+
+    <div class="reveal">
+      <div class="day-head">
+        <span class="day-badge">DAY 2</span>
+        <span class="dt">頂上決戦 ＆ フィナーレの日 ／ 10:00 – 20:00</span>
+      </div>
+      <div class="tl">
+        <div class="item"><div class="t">10:00</div><div class="h">開場・前日ハイライト上映</div><div class="d">DAY1の名場面で熱を再点火</div></div>
+        <div class="item"><div class="t">11:00</div><div class="h">準決勝 第1・第2試合</div><div class="d">メインアリーナ、フル演出</div></div>
+        <div class="item"><div class="t">14:00</div><div class="h">エキシビション（プロ×ファン／レジェンド戦）</div><div class="d">会場参加型の特別企画</div></div>
+        <div class="item"><div class="t">15:30</div><div class="h">スペシャルステージライブ</div><div class="d">テーマ楽曲・ゲスト演奏で会場を一体化</div></div>
+        <div class="item key"><div class="t">17:00</div><div class="h">グランドファイナル（決勝戦）</div><div class="d">本イベント最大の山場・全力演出</div></div>
+        <div class="item key"><div class="t">19:00</div><div class="h">表彰式・クロージング・花火/フィナーレ演出</div><div class="d">優勝の瞬間と二日間の余韻</div></div>
+      </div>
+    </div>
+    <p class="note reveal">※ 時間・内容はあくまで構成イメージです。出演者・チームの確定、会場の利用規定に応じて最終調整します。</p>
+  </div>
+</section>
+
+<!-- ===== 08 TOURNAMENT FORMAT ===== -->
+<section id="format" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">08</span> Competition Format</div>
+      <h2 class="sec-title">競技フォーマット</h2>
+    </div>
+    <div class="grid g2 reveal" style="margin-top:1.6rem;">
+      <div class="card">
+        <div class="ic">👑</div>
+        <h3>招待制トーナメント（メイン）</h3>
+        <p>国内外の注目チーム 8組を招待。グループステージ → ノックアウト → BO5グランドファイナルの王道構成で“最高峰の試合”を提供します。</p>
+        <div class="tagrow">
+          <span class="pill g">8チーム招待</span><span class="pill">グループ→決勝T</span><span class="pill">決勝はBO5</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ic">🌱</div>
+        <h3>アマチュア全国大会（参加型）</h3>
+        <p>事前オンライン予選を勝ち抜いた一般チームが本戦に登壇。「観客」を「主役」に変え、来場動機とコミュニティの裾野を広げます。</p>
+        <div class="tagrow">
+          <span class="pill g">オンライン予選</span><span class="pill">本戦オフライン</span><span class="pill">賞金/賞品あり</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid g4 reveal" style="margin-top:1.1rem;">
+      <div class="card kpi"><div class="big">8<small>組</small></div><div class="lab">招待トップチーム</div></div>
+      <div class="card kpi"><div class="big">64<small>組</small></div><div class="lab">アマチュア予選参加枠</div></div>
+      <div class="card kpi"><div class="big">¥500<small>万</small></div><div class="lab">想定賞金総額</div></div>
+      <div class="card kpi"><div class="big">2<small>日</small></div><div class="lab">全試合の会場進行</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 09 EXPERIENCE ===== -->
+<section id="experience">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">09</span> Experiences</div>
+      <h2 class="sec-title">体験・演出コンテンツ</h2>
+      <p class="sec-lead">「試合を観ていない時間」をいかに豊かにするかが、大型ホール興行の成否を分けます。回遊・滞在・拡散を生む仕掛けを多層に用意します。</p>
+    </div>
+    <div class="grid g3 reveal" style="margin-top:1.8rem;">
+      <div class="card"><div class="ic">🕹️</div><h3>フリープレイ＆試遊</h3><p>最新環境を体験できる試遊台と対戦コーナー。初心者講習会も実施。</p></div>
+      <div class="card"><div class="ic">🎤</div><h3>ステージライブ</h3><p>テーマ楽曲の生演奏やゲストパフォーマンスで会場を一体化。</p></div>
+      <div class="card"><div class="ic">🎨</div><h3>ファンアート展示</h3><p>公募イラスト・ファンアートのギャラリー展示と人気投票。</p></div>
+      <div class="card"><div class="ic">🧥</div><h3>コスプレコンテスト</h3><p>更衣室・撮影セット完備。ステージ審査で盛り上げSNS拡散を誘発。</p></div>
+      <div class="card"><div class="ic">🛍️</div><h3>限定グッズ・コラボ物販</h3><p>会場限定アイテムとブランドコラボで“ここでしか”の価値を提供。</p></div>
+      <div class="card"><div class="ic">📸</div><h3>没入フォトスポット</h3><p>世界観を再現した大型セット。来場の記念と拡散の起点に。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 10 MARKETING ===== -->
+<section id="marketing" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">10</span> Marketing &amp; Media</div>
+      <h2 class="sec-title">集客・配信・メディア戦略</h2>
+      <p class="sec-lead">来場（数千〜万人）の熱量を、配信とSNSで数十万〜数百万のリーチへ増幅。チケット完売とスポンサー価値の最大化を両輪で進めます。</p>
+    </div>
+    <div class="grid g3 reveal" style="margin-top:1.8rem;">
+      <div class="card">
+        <div class="ic">📣</div><h3>事前 ― 期待を育てる</h3>
+        <p>出場チーム発表、選手密着、カウントダウン企画をSNSで連投。インフルエンサー／ストリーマー連携で告知を加速。</p>
+        <div class="tagrow"><span class="pill g">6か月前始動</span></div>
+      </div>
+      <div class="card">
+        <div class="ic">🔴</div><h3>当日 ― 熱を全世界へ</h3>
+        <p>日英のマルチ配信、舞台裏ショート動画、視聴者参加型企画。会場とオンラインの境界を溶かします。</p>
+        <div class="tagrow"><span class="pill g">同時配信</span><span class="pill">多言語</span></div>
+      </div>
+      <div class="card">
+        <div class="ic">♻️</div><h3>事後 ― 次へつなげる</h3>
+        <p>ハイライト・名場面アーカイブ、来場者アンケート、次回告知。一過性で終わらせず年次ブランドへ育成。</p>
+        <div class="tagrow"><span class="pill g">年次化</span></div>
+      </div>
+    </div>
+    <div class="grid g4 reveal" style="margin-top:1.1rem;">
+      <div class="card kpi"><div class="big">30<small>万+</small></div><div class="lab">配信ピーク同時視聴(目標)</div></div>
+      <div class="card kpi"><div class="big">1,000<small>万+</small></div><div class="lab">SNS総インプレッション(目標)</div></div>
+      <div class="card kpi"><div class="big">2<small>言語</small></div><div class="lab">日本語・英語の同時配信</div></div>
+      <div class="card kpi"><div class="big">100<small>%</small></div><div class="lab">前売チケット完売目標</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 11 SPONSORSHIP ===== -->
+<section id="sponsor">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">11</span> Sponsorship</div>
+      <h2 class="sec-title">協賛メニュー</h2>
+      <p class="sec-lead">esportsと相性の良いカテゴリ（PC／デバイス／通信／飲料／金融 等）を中心に、露出規模に応じた4階層のパッケージを用意。協賛は本企画の収益の柱です。</p>
+    </div>
+    <div class="grid g4 reveal" style="margin-top:1.8rem;">
+      <div class="tier t1">
+        <div class="tname">TITLE</div>
+        <div class="price">¥30,000,000<small>〜</small></div>
+        <div class="slots">限定 1社</div>
+        <ul>
+          <li>イベント冠スポンサー（名称併記）</li>
+          <li>メインステージ・配信の最上位露出</li>
+          <li>基調アナウンス／表彰プレゼンター</li>
+          <li>最優位ブース区画・VIP招待枠</li>
+        </ul>
+      </div>
+      <div class="tier t2">
+        <div class="tname">PLATINUM</div>
+        <div class="price">¥10,000,000<small>〜</small></div>
+        <div class="slots">限定 3社</div>
+        <ul>
+          <li>ステージ・サイネージ常時露出</li>
+          <li>配信内CM枠・ロゴ掲出</li>
+          <li>大型体験ブース区画</li>
+          <li>公式SNS連携投稿</li>
+        </ul>
+      </div>
+      <div class="tier t3">
+        <div class="tname">GOLD</div>
+        <div class="price">¥3,000,000<small>〜</small></div>
+        <div class="slots">限定 6社</div>
+        <ul>
+          <li>会場内サイネージ掲出</li>
+          <li>標準ブース区画</li>
+          <li>公式サイト・パンフ掲載</li>
+          <li>来場者ノベルティ同梱権</li>
+        </ul>
+      </div>
+      <div class="tier t4">
+        <div class="tname">PARTNER</div>
+        <div class="price">¥500,000<small>〜</small></div>
+        <div class="slots">複数社</div>
+        <ul>
+          <li>ロゴ掲出（Web・会場）</li>
+          <li>協賛各種（賞品／飲食／物品）</li>
+          <li>現物協賛・メディアタイアップ可</li>
+          <li>来場者特典の提供</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note reveal">※ 金額・社数・特典はパッケージ設計の初期イメージです。営業フェーズでカテゴリ独占や個別カスタムにも対応します。</p>
+  </div>
+</section>
+
+<!-- ===== 12 BUDGET ===== -->
+<section id="budget" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">12</span> Budget Plan</div>
+      <h2 class="sec-title">収支計画（概算）</h2>
+      <p class="sec-lead">協賛・チケット・物販・飲食・配信の複数収益で構成し、最大コストである会場・制作費を吸収。保守的な前提でも単年黒字を狙う設計です。</p>
+    </div>
+
+    <div class="balance reveal" style="margin-bottom:1.6rem;">
+      <div class="b rev"><div class="l">想定総収入</div><div class="v">¥98,000,000</div></div>
+      <div class="b cost"><div class="l">想定総支出</div><div class="v">¥85,000,000</div></div>
+      <div class="b prof"><div class="l">想定営業利益</div><div class="v">+¥13,000,000</div></div>
+    </div>
+
+    <div class="split reveal" style="align-items:start;">
+      <!-- REVENUE -->
+      <div class="tablescroll">
+        <table class="btable">
+          <thead><tr><th>収入の部</th><th class="num">金額(円)</th></tr></thead>
+          <tbody>
+            <tr><td>協賛収入（Title〜Partner）</td><td class="num">52,000,000</td></tr>
+            <tr><td>チケット収入<span class="mute"> ／ 平均¥3,500 × 約14,000枚</span></td><td class="num">49,000,000</td></tr>
+            <tr><td>物販ロイヤリティ・出店料</td><td class="num">9,000,000</td></tr>
+            <tr><td>飲食・キッチンカー出店料</td><td class="num">3,000,000</td></tr>
+            <tr><td>アマチュア大会参加費 ほか</td><td class="num">2,000,000</td></tr>
+            <tr><td>配信・メディア関連</td><td class="num">3,000,000</td></tr>
+            <tr class="grp"><td>小計（補正前）</td><td class="num">118,000,000</td></tr>
+            <tr><td><span class="mute">※ チケット未達等の保守補正</span></td><td class="num"><span class="mute">−20,000,000</span></td></tr>
+          </tbody>
+          <tfoot><tr><td>収入 合計（計画値）</td><td class="num">98,000,000</td></tr></tfoot>
+        </table>
+      </div>
+      <!-- COST -->
+      <div class="tablescroll">
+        <table class="btable">
+          <thead><tr><th>支出の部</th><th class="num">金額(円)</th></tr></thead>
+          <tbody>
+            <tr><td>会場費（2日＋設営撤去）</td><td class="num">22,000,000</td></tr>
+            <tr><td>ステージ・映像・音響・LED制作</td><td class="num">20,000,000</td></tr>
+            <tr><td>配信・中継システム／スタッフ</td><td class="num">9,000,000</td></tr>
+            <tr><td>賞金・出演／招待チーム費</td><td class="num">12,000,000</td></tr>
+            <tr><td>警備・運営スタッフ・設営人件費</td><td class="num">8,000,000</td></tr>
+            <tr><td>広告宣伝・PR・クリエイティブ</td><td class="num">7,000,000</td></tr>
+            <tr><td>権利／ライセンス・保険・許認可</td><td class="num">4,000,000</td></tr>
+            <tr><td>予備費（約4%）</td><td class="num">3,000,000</td></tr>
+          </tbody>
+          <tfoot><tr><td>支出 合計</td><td class="num">85,000,000</td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+    <p class="note reveal">
+      ※ 金額はすべて税抜の概算であり、会場・出演・規模の確定により変動します。協賛獲得状況に応じて段階的に規模を拡縮できる“スケーラブル設計”を前提とし、損益分岐は協賛＋チケットの早期積み上げで担保します。
+    </p>
+  </div>
+</section>
+
+<!-- ===== 13 ORGANIZATION ===== -->
+<section id="org">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">13</span> Organization</div>
+      <h2 class="sec-title">実施体制</h2>
+      <p class="sec-lead">実行委員会を中核に、競技運営・会場制作・配信・営業・広報の専門チームが連携。専門領域は実績ある外部パートナーへ委託し、品質と安全を担保します。</p>
+    </div>
+    <div class="grid g3 reveal" style="margin-top:1.8rem;">
+      <div class="card"><div class="ic">🧭</div><h3>実行委員会（統括）</h3><p>全体統括、予算管理、権利元・行政との調整、意思決定。</p></div>
+      <div class="card"><div class="ic">🎯</div><h3>競技運営チーム</h3><p>大会レギュレーション、審判、選手対応、予選〜本戦の進行。</p></div>
+      <div class="card"><div class="ic">🏗️</div><h3>会場・制作チーム</h3><p>レイアウト、ステージ・映像・音響、設営撤去、什器管理。</p></div>
+      <div class="card"><div class="ic">📡</div><h3>配信・技術チーム</h3><p>中継、スイッチング、多言語実況、ネットワーク冗長化。</p></div>
+      <div class="card"><div class="ic">💼</div><h3>営業・協賛チーム</h3><p>スポンサー開拓、契約、ブース調整、特典履行管理。</p></div>
+      <div class="card"><div class="ic">🛡️</div><h3>運営・安全管理チーム</h3><p>警備、来場者誘導、救護、緊急時対応、危機管理。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 14 ROADMAP ===== -->
+<section id="roadmap" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">14</span> Roadmap</div>
+      <h2 class="sec-title">準備スケジュール（開催まで約18か月）</h2>
+    </div>
+    <div class="road reveal" style="margin-top:1.6rem;">
+      <div class="ph">
+        <div class="q">PHASE 1</div><div class="when">2027 Q1–Q2</div>
+        <ul><li>企画確定・予算策定</li><li>権利元への確認・許諾相談</li><li>会場仮押さえ</li><li>実行委員会組成</li></ul>
+      </div>
+      <div class="ph">
+        <div class="q">PHASE 2</div><div class="when">2027 Q3–Q4</div>
+        <ul><li>協賛営業スタート</li><li>会場本契約</li><li>制作・配信パートナー選定</li><li>大会レギュレーション設計</li></ul>
+      </div>
+      <div class="ph">
+        <div class="q">PHASE 3</div><div class="when">2028 Q1</div>
+        <ul><li>出場チーム発表</li><li>チケット販売開始</li><li>プロモーション本格化</li><li>アマチュア予選告知</li></ul>
+      </div>
+      <div class="ph">
+        <div class="q">PHASE 4</div><div class="when">2028 Q2</div>
+        <ul><li>オンライン予選実施</li><li>当日運営計画・安全計画確定</li><li>リハーサル・設営計画</li><li>最終販促・前売追込み</li></ul>
+      </div>
+      <div class="ph">
+        <div class="q">PHASE 5</div><div class="when">2028 8月</div>
+        <ul><li>設営・リハーサル</li><li>本番（2日間）</li><li>撤収・精算</li><li>レポート・次回計画</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 15 RISK ===== -->
+<section id="risk">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">15</span> Risk Management</div>
+      <h2 class="sec-title">リスクと対策</h2>
+    </div>
+    <div class="split reveal" style="margin-top:1.6rem;">
+      <div class="card" style="padding:1.4rem 1.5rem;">
+        <div class="risk"><span class="lvl h">高</span><div class="body"><h4>権利・ライセンス</h4><p>権利元ガイドライン準拠を前提に、早期に許諾協議を開始。逸脱しない大会設計を徹底。</p></div></div>
+        <div class="risk"><span class="lvl h">高</span><div class="body"><h4>集客未達</h4><p>段階的な販売目標とKPI監視。未達時は規模・コストを縮小するスケーラブル運用で損益を防衛。</p></div></div>
+        <div class="risk"><span class="lvl m">中</span><div class="body"><h4>協賛獲得の遅延</h4><p>営業を最優先で前倒し。現物協賛・カテゴリ独占など柔軟なメニューで充足率を確保。</p></div></div>
+      </div>
+      <div class="card" style="padding:1.4rem 1.5rem;">
+        <div class="risk"><span class="lvl m">中</span><div class="body"><h4>来場者の安全・混雑</h4><p>入退場分散、整理券、警備・救護体制、緊急避難計画を事前策定し当日運用。</p></div></div>
+        <div class="risk"><span class="lvl m">中</span><div class="body"><h4>配信トラブル</h4><p>回線・配信系統の冗長化、リハーサル、バックアップ体制で中断リスクを最小化。</p></div></div>
+        <div class="risk"><span class="lvl l">低</span><div class="body"><h4>悪天候・交通</h4><p>屋内開催で天候影響は限定的。交通・宿泊情報を事前案内し来場を支援。</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 16 KPI ===== -->
+<section id="kpi" style="background:var(--bg-2);">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">16</span> KPI</div>
+      <h2 class="sec-title">成功指標（KPI）</h2>
+      <p class="sec-lead">「動員」「収益」「リーチ」「満足度」の4軸で評価し、次回開催の継続判断と改善に活かします。</p>
+    </div>
+    <div class="grid g4 reveal" style="margin-top:1.8rem;">
+      <div class="card kpi"><div class="big">18,000<small>名</small></div><div class="lab">2日間 来場者数</div></div>
+      <div class="card kpi"><div class="big">黒字<small></small></div><div class="lab">単年営業損益</div></div>
+      <div class="card kpi"><div class="big">30<small>万+</small></div><div class="lab">配信ピーク同時視聴</div></div>
+      <div class="card kpi"><div class="big">90<small>%+</small></div><div class="lab">来場者満足度</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 17 VISION / CLOSE ===== -->
+<section id="vision">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="kicker"><span class="sec-no">17</span> Future Vision</div>
+      <h2 class="sec-title">今後の展望</h2>
+      <p class="sec-lead">
+        RIFT SUMMITは単発の興行ではなく、毎年夏の“恒例フェス”へと育てることを目指します。初年度で運営ノウハウ・スポンサー基盤・コミュニティを確立し、
+        2年目以降は規模拡大・地方巡回・海外チーム招致の本格化・関連IPへの横展開へ。日本のesportsカルチャーを象徴する場をつくります。
+      </p>
+    </div>
+
+    <div class="close reveal" style="margin-top:2.4rem;">
+      <h2>峡谷の熱を、現実のホールへ。</h2>
+      <p>本企画書は提案のたたき台です。会場規模・予算・協賛方針に応じて、最適なスケールにカスタマイズしてご提案いたします。次のステップとして、実施判断に向けたお打ち合わせをご提案します。</p>
+      <a href="#cover" class="btn">▲ 先頭へ戻る</a>
+      <a href="events.html" class="btn ghost" style="margin-left:0.6rem;">イベント一覧へ</a>
+      <div class="orn" style="margin-top:2.2rem;"><span></span><b></b><span></span></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div class="b">RIFT SUMMIT 2028</div>
+    <small>企画・主催：RtoM Entertainment Lab ／ 企画書 Ver 1.0 ／ Issued 2026.06 ／ CONFIDENTIAL</small>
+  </div>
+  <div class="wrap" style="margin-top:0.8rem;">
+    <small style="color:var(--text-faint); font-size:0.68rem; line-height:1.7; display:block;">
+      ※ 「League of Legends」はRiot Games, Inc.の商標です。本資料はファン／コミュニティ主導イベントの企画提案であり、実施には権利元の定めるガイドライン準拠および必要な許諾の取得を前提とします。記載の数値・スケジュールはすべて想定値です。
+    </small>
+  </div>
+</footer>
+
+<script>
+  // scroll progress bar
+  const prog = document.getElementById('progress');
+  const onScroll = () => {
+    const h = document.documentElement;
+    const p = (h.scrollTop) / (h.scrollHeight - h.clientHeight);
+    prog.style.width = (p * 100) + '%';
+  };
+  document.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  // reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
